@@ -15,19 +15,17 @@ const B = {
   green:       "#22c55e", amber: "#f59e0b", red: "#ef4444",
 };
 
-// Campus colour palettes
 const CAM = {
-  lon:  { col: "#7B2FFF", bg: "#FAF5FF", sep: "#E9D5FF", label: "London"      },
-  sun:  { col: "#0891b2", bg: "#F0FDFF", sep: "#BAE6FD", label: "Sunderland"  },
-  york: { col: "#D97706", bg: "#FFFBEB", sep: "#FDE68A", label: "York"        },
+  lon:  { col: "#7B2FFF", bg: "#FAF5FF", sep: "#E9D5FF", label: "London"     },
+  sun:  { col: "#0891b2", bg: "#F0FDFF", sep: "#BAE6FD", label: "Sunderland" },
+  york: { col: "#D97706", bg: "#FFFBEB", sep: "#FDE68A", label: "York"       },
 };
 
 // ── UNIVERSITY CONFIG ─────────────────────────────────────────────────────────
 const UNI = {
   sunderland: {
     id: "sunderland", shortName: "Sunderland", color: "#0891b2",
-    fullName: "University of Sunderland",
-    campus1: "lon", campus2: "sun",
+    fullName: "University of Sunderland", campus1: "lon", campus2: "sun",
     courses: [
       { name: "MSc Nursing Practice – London",      lon: 20, sun:  0 },
       { name: "MSc Public Health",                  lon: 20, sun: 40 },
@@ -47,70 +45,117 @@ const UNI = {
   },
   ysj: {
     id: "ysj", shortName: "York St John", color: "#D97706",
-    fullName: "York St John University",
-    campus1: "lon", campus2: "york",
+    fullName: "York St John University", campus1: "lon", campus2: "york",
     courses: [
-      // London campus
-      { name: "MBA (London)",                                                            lon: 10, york:  0 },
-      { name: "MSc Global Healthcare Management",                                        lon:  5, york:  0 },
-      { name: "MSc International Project Management",                                    lon:  5, york:  0 },
-      { name: "MSc Digital Marketing",                                                   lon:  5, york:  0 },
-      { name: "MSc Public Health (YSJ)",                                                 lon:  6, york:  0 },
-      { name: "MSc Data Science (YSJ)",                                                  lon:  6, york:  0 },
-      { name: "MSc Computer Science (London)",                                           lon:  6, york:  0 },
-      { name: "MSc Computing (Top-up)",                                                  lon:  2, york:  0 },
-      { name: "MSc Business Computing (Top-up)",                                         lon:  2, york:  0 },
-      { name: "BA Global Business Management (Top-up)",                                  lon:  2, york:  0 },
-      { name: "MSc Tourism & Hospitality",                                               lon:  3, york:  0 },
-      { name: "MRes Management Studies",                                                 lon:  6, york:  0 },
-      // York campus — YBS
-      { name: "BA (Hons) Accounting and Finance",                                        lon:  0, york:  1 },
-      { name: "BA (Hons) Business Management",                                           lon:  0, york:  1 },
-      { name: "BA (Hons) International Business",                                        lon:  0, york:  1 },
-      { name: "BA (Hons) International Tourism & Hospitality Mgmt with Foundation Year", lon:  0, york:  1 },
-      { name: "Masters Business Administration (York)",                                  lon:  0, york: 10 },
-      { name: "MBA Healthcare Management",                                               lon:  0, york: 10 },
-      { name: "MSc Human Resource Management",                                           lon:  0, york:  5 },
-      { name: "MSc Project Management",                                                  lon:  0, york:  5 },
-      { name: "MSc International Business",                                              lon:  0, york:  5 },
-      { name: "MRes in Business",                                                        lon:  0, york:  6 },
-      { name: "MSc Marketing",                                                           lon:  0, york:  2 },
-      { name: "MSc Strategic Digital Marketing",                                         lon:  0, york:  2 },
-      // York campus — Arts
-      { name: "MSc Product Design",                                                      lon:  0, york:  1 },
-      // York campus — ELP
-      { name: "BSc (Hons) Psychology",                                                   lon:  0, york:  1 },
-      { name: "MA TESOL",                                                                lon:  0, york:  1 },
-      { name: "MSc Psychology of Child & Adolescent Development",                        lon:  0, york:  1 },
-      { name: "MA Education (YSJ)",                                                      lon:  0, york:  2 },
-      { name: "MRes in Psychology",                                                      lon:  0, york:  1 },
-      { name: "MRes in Education",                                                       lon:  0, york:  1 },
-      { name: "MRes in Linguistics",                                                     lon:  0, york:  1 },
-      // York campus — STH
-      { name: "BSc (Hons) Computer Science (York)",                                      lon:  0, york:  1 },
-      { name: "BSc (Hons) Software Engineering",                                         lon:  0, york:  1 },
-      { name: "BSc Cyber Security",                                                      lon:  0, york:  1 },
-      { name: "BSc (Hons) Biomedical Science",                                           lon:  0, york:  1 },
-      { name: "MRes Social Science",                                                     lon:  0, york:  1 },
-      { name: "MRes Science and Health",                                                 lon:  0, york:  1 },
-      // York campus — Humanities
-      { name: "MA International Politics and Security",                                  lon:  0, york:  1 },
-      { name: "MRes Humanities",                                                         lon:  0, york:  1 },
-      { name: "MSc Environmental Sustainability & Management",                           lon:  0, york:  1 },
+      // ── London campus ──────────────────────────────────────────────────────
+      { name: "MBA (London)",                                                             lon: 10, york:  0 },
+      { name: "MSc Global Healthcare Management",                                         lon:  5, york:  0 },
+      { name: "MSc International Project Management",                                     lon:  5, york:  0 },
+      { name: "MSc Digital Marketing",                                                    lon:  5, york:  0 },
+      { name: "MSc Public Health (YSJ)",                                                  lon:  6, york:  0 },
+      { name: "MSc Data Science (YSJ)",                                                   lon:  6, york:  0 },
+      { name: "MSc Computer Science (London)",                                            lon:  6, york:  0 },
+      { name: "MSc Computing (Top-up)",                                                   lon:  2, york:  0 },
+      { name: "MSc Business Computing (Top-up)",                                          lon:  2, york:  0 },
+      { name: "BA Global Business Management (Top-up)",                                   lon:  2, york:  0 },
+      { name: "MSc Tourism & Hospitality",                                                lon:  3, york:  0 },
+      { name: "MRes Management Studies",                                                  lon:  6, york:  0 },
+      // ── York campus — YBS ──────────────────────────────────────────────────
+      { name: "BA (Hons) Accounting and Finance",                                         lon:  0, york:  1 },
+      { name: "BA (Hons) Business Management",                                            lon:  0, york:  1 },
+      { name: "BA (Hons) International Business",                                         lon:  0, york:  1 },
+      { name: "BA (Hons) Intl Tourism & Hospitality Mgmt with Foundation Year",           lon:  0, york:  1 },
+      { name: "Masters Business Administration (York)",                                   lon:  0, york: 10 },
+      { name: "MBA Healthcare Management",                                                lon:  0, york: 10 },
+      { name: "MSc Human Resource Management",                                            lon:  0, york:  5 },
+      { name: "MSc Project Management",                                                   lon:  0, york:  5 },
+      { name: "MSc International Business",                                               lon:  0, york:  5 },
+      { name: "MRes in Business",                                                         lon:  0, york:  6 },
+      { name: "MSc Marketing",                                                            lon:  0, york:  2 },
+      { name: "MSc Strategic Digital Marketing",                                          lon:  0, york:  2 },
+      // ── York campus — Arts ─────────────────────────────────────────────────
+      { name: "MSc Product Design",                                                       lon:  0, york:  1 },
+      // ── York campus — ELP ──────────────────────────────────────────────────
+      { name: "BSc (Hons) Psychology",                                                    lon:  0, york:  1 },
+      { name: "MA TESOL",                                                                 lon:  0, york:  1 },
+      { name: "MSc Psychology of Child & Adolescent Development",                         lon:  0, york:  1 },
+      { name: "MA Education (YSJ)",                                                       lon:  0, york:  2 },
+      { name: "MRes in Psychology",                                                       lon:  0, york:  1 },
+      { name: "MRes in Education",                                                        lon:  0, york:  1 },
+      { name: "MRes in Linguistics",                                                      lon:  0, york:  1 },
+      // ── York campus — STH ──────────────────────────────────────────────────
+      { name: "BSc (Hons) Computer Science (York)",                                       lon:  0, york:  1 },
+      { name: "BSc (Hons) Software Engineering",                                          lon:  0, york:  1 },
+      { name: "BSc Cyber Security",                                                       lon:  0, york:  1 },
+      { name: "BSc (Hons) Biomedical Science",                                            lon:  0, york:  1 },
+      { name: "MRes Social Science",                                                      lon:  0, york:  1 },
+      { name: "MRes Science and Health",                                                  lon:  0, york:  1 },
+      // ── York campus — Humanities ───────────────────────────────────────────
+      { name: "MA International Politics and Security",                                   lon:  0, york:  1 },
+      { name: "MRes Humanities",                                                          lon:  0, york:  1 },
+      { name: "MSc Environmental Sustainability & Management",                            lon:  0, york:  1 },
     ],
-    otherCourses: [],
+    // Courses present in spreadsheet but with no Study Now target set
+    otherCourses: [
+      // YBS
+      "BA (Hons) Business Management (Level 6)",
+      "BA (Hons) International Business (Level 6)",
+      "BA (Hons) International Tourism and Hospitality Management",
+      "BA (Hons) Marketing",
+      "BA (Hons) Marketing (Level 6)",
+      // Arts
+      "BA (Hons) Film and TV Production (Level 6)",
+      "BA (Hons) Fine Art",
+      "BA (Hons) Games Design",
+      "BA (Hons) Graphic Design",
+      "BA (Hons) Graphic Design (Level 6)",
+      "BA (Hons) Interior Design",
+      "BA (Hons) Media Production",
+      "BA (Hons) Media Production (Level 6)",
+      "BA (Hons) Music Production",
+      "BA (Hons) Music Production (Level 6)",
+      "BA (Hons) Product Design",
+      "BA (Hons) Product Design (Level 6)",
+      "MA Graphic Design",
+      "MA Media Production",
+      "MA Music Production",
+      "MA Virtual and Augmented Reality",
+      "MRes in Arts",
+      // ELP
+      "BA (Hons) Children, Young People & Society (Level 6)",
+      "BA (Hons) Early Years Education and Care (Level 6)",
+      "BA (Hons) English Language and Linguistics (Level 6)",
+      "BSc (Hons) Psychology (Level 6)",
+      "Professional Doctorate in Counselling Psychology",
+      // STH
+      "BSc (Hons) Computer Science (Level 6)",
+      "BSc (Hons) Software Engineering (Level 6)",
+      "BSc Cyber Security (Level 6)",
+      "BSc Games Development",
+      "BSc (Hons) Physical Education and Sports Coaching (Level 6)",
+      "BSc (Hons) Sport and Exercise Science (Level 6)",
+      // Humanities
+      "BA (Hons) Creative Writing",
+      "BA (Hons) English Literature",
+      "BA (Hons) English Literature (Level 6)",
+      "BA (Hons) Media and Communication (Level 6)",
+      "BA (Hons) Politics and International Relations (Level 6)",
+      "MA Creative Writing",
+      "MA Publishing",
+      "MA Environment and Social Justice",
+      "MA History",
+      "MA Contemporary Literature",
+      "MA Religion in Society",
+    ],
   },
 };
 
-// Build default targets from course config
+// ── HELPERS ───────────────────────────────────────────────────────────────────
 function buildDefaultTargets(courses, c1, c2) {
   return Object.fromEntries(courses.map(c => [c.name, { [c1]: c[c1] || 0, [c2]: c[c2] || 0 }]));
 }
-
-const blankActuals = (courses, c1, c2) =>
-  Object.fromEntries(courses.map(c => [c.name, { [c1]: "", [c2]: "" }]));
-const blankOther = (list) => Object.fromEntries(list.map(k => [k, { lon: "", sun: "" }]));
-
+const blankActuals = (courses, c1, c2) => Object.fromEntries(courses.map(c => [c.name, { [c1]: "", [c2]: "" }]));
+const blankOther   = (list) => Object.fromEntries(list.map(k => [k, { lon: "", sun: "", york: "" }]));
 const n   = (v) => parseInt(v) || 0;
 const pct = (a, t) => (t > 0 ? Math.min(100, Math.round((a / t) * 100)) : null);
 
@@ -170,18 +215,26 @@ const TH = { padding: "11px 14px", textAlign: "left", fontWeight: 700, fontSize:
 const TC = { textAlign: "center" };
 const TD = { padding: "11px 14px", verticalAlign: "middle", fontSize: 13, borderBottom: `1px solid ${B.silverLight}` };
 
-// ── GENERIC UNIVERSITY TABLE ──────────────────────────────────────────────────
+function TotalsRow({ cols }) {
+  return (
+    <tr style={{ background: B.purple }}>
+      {cols.map((col, i) => (
+        <td key={i} style={{ ...TD, ...col.style, fontFamily: "'DM Mono', monospace" }}>{col.value}</td>
+      ))}
+    </tr>
+  );
+}
+
+// ── CORE UNIVERSITY TABLE ─────────────────────────────────────────────────────
 function UniCoreTable({ uni, actuals, onSetActuals, targets, onSetTargets, editable }) {
   const { courses, campus1: c1key, campus2: c2key } = uni;
   const c1 = CAM[c1key], c2 = CAM[c2key];
   const setA = (key, side, val) => onSetActuals(p => ({ ...p, [key]: { ...p[key], [side]: val } }));
   const setT = (key, side, val) => onSetTargets(p => ({ ...p, [key]: { ...p[key], [side]: val } }));
-  const c1ActTot = courses.reduce((s, c) => s + n(actuals[c.name]?.[c1key]), 0);
-  const c2ActTot = courses.reduce((s, c) => s + n(actuals[c.name]?.[c2key]), 0);
-  const c1TgtTot = courses.reduce((s, c) => s + n(targets[c.name]?.[c1key]), 0);
-  const c2TgtTot = courses.reduce((s, c) => s + n(targets[c.name]?.[c2key]), 0);
-  const grandAct = c1ActTot + c2ActTot;
-  const grandTgt = c1TgtTot + c2TgtTot;
+  const c1A = courses.reduce((s, c) => s + n(actuals[c.name]?.[c1key]), 0);
+  const c2A = courses.reduce((s, c) => s + n(actuals[c.name]?.[c2key]), 0);
+  const c1T = courses.reduce((s, c) => s + n(targets[c.name]?.[c1key]), 0);
+  const c2T = courses.reduce((s, c) => s + n(targets[c.name]?.[c2key]), 0);
 
   return (
     <div style={{ overflowX: "auto" }}>
@@ -202,9 +255,9 @@ function UniCoreTable({ uni, actuals, onSetActuals, targets, onSetTargets, edita
         <tbody>
           {courses.map((c, i) => {
             const lt = n(targets[c.name]?.[c1key]), st = n(targets[c.name]?.[c2key]);
-            const la = n(actuals[c.name]?.[c1key]),  sa = n(actuals[c.name]?.[c2key]);
+            const la = n(actuals[c.name]?.[c1key]), sa = n(actuals[c.name]?.[c2key]);
             const tot = la + sa, tgt = lt + st;
-            const p   = pct(tot, tgt);
+            const p = pct(tot, tgt);
             const bar = p === null ? B.inkLight : p >= 100 ? B.green : p >= 70 ? B.amber : B.red;
             return (
               <tr key={c.name} style={{ background: i % 2 ? B.silverLight : B.white }}>
@@ -235,18 +288,18 @@ function UniCoreTable({ uni, actuals, onSetActuals, targets, onSetTargets, edita
           })}
           <tr style={{ background: B.purple }}>
             <td style={{ ...TD, color: B.white, fontWeight: 800, fontSize: 14 }}>TOTALS</td>
-            <td style={{ ...TD, ...TC, color: "#e9d5ff", fontWeight: 700, background: "rgba(255,255,255,.1)", borderLeft: "2px solid rgba(255,255,255,.15)", fontFamily: "'DM Mono', monospace" }}>{c1TgtTot}</td>
-            <td style={{ ...TD, ...TC, color: "#e9d5ff", fontWeight: 800, fontSize: 17, background: "rgba(255,255,255,.1)", fontFamily: "'DM Mono', monospace" }}>{c1ActTot}</td>
-            <td style={{ ...TD, ...TC, color: "#fde68a", fontWeight: 700, background: "rgba(255,255,255,.08)", borderLeft: "2px solid rgba(255,255,255,.15)", fontFamily: "'DM Mono', monospace" }}>{c2TgtTot}</td>
-            <td style={{ ...TD, ...TC, color: "#fde68a", fontWeight: 800, fontSize: 17, background: "rgba(255,255,255,.08)", fontFamily: "'DM Mono', monospace" }}>{c2ActTot}</td>
-            <td style={{ ...TD, ...TC, color: B.white, fontWeight: 700, borderLeft: "2px solid rgba(255,255,255,.15)", fontFamily: "'DM Mono', monospace" }}>{grandTgt}</td>
-            <td style={{ ...TD, ...TC, color: B.white, fontWeight: 800, fontSize: 19, fontFamily: "'DM Mono', monospace" }}>{grandAct}</td>
+            <td style={{ ...TD, ...TC, color: "#e9d5ff", fontWeight: 700, background: "rgba(255,255,255,.1)", borderLeft: "2px solid rgba(255,255,255,.15)", fontFamily: "'DM Mono', monospace" }}>{c1T}</td>
+            <td style={{ ...TD, ...TC, color: "#e9d5ff", fontWeight: 800, fontSize: 17, background: "rgba(255,255,255,.1)", fontFamily: "'DM Mono', monospace" }}>{c1A}</td>
+            <td style={{ ...TD, ...TC, color: "#fde68a", fontWeight: 700, background: "rgba(255,255,255,.08)", borderLeft: "2px solid rgba(255,255,255,.15)", fontFamily: "'DM Mono', monospace" }}>{c2T}</td>
+            <td style={{ ...TD, ...TC, color: "#fde68a", fontWeight: 800, fontSize: 17, background: "rgba(255,255,255,.08)", fontFamily: "'DM Mono', monospace" }}>{c2A}</td>
+            <td style={{ ...TD, ...TC, color: B.white, fontWeight: 700, borderLeft: "2px solid rgba(255,255,255,.15)", fontFamily: "'DM Mono', monospace" }}>{c1T + c2T}</td>
+            <td style={{ ...TD, ...TC, color: B.white, fontWeight: 800, fontSize: 19, fontFamily: "'DM Mono', monospace" }}>{c1A + c2A}</td>
             <td style={{ ...TD }} colSpan={2}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{ flex: 1, background: "rgba(255,255,255,.2)", borderRadius: 99, height: 8, overflow: "hidden" }}>
-                  <div style={{ width: `${pct(grandAct, grandTgt) ?? 0}%`, height: "100%", background: B.white, borderRadius: 99, transition: "width .4s" }} />
+                  <div style={{ width: `${pct(c1A + c2A, c1T + c2T) ?? 0}%`, height: "100%", background: B.white, borderRadius: 99, transition: "width .4s" }} />
                 </div>
-                <span style={{ color: "rgba(255,255,255,.85)", fontSize: 13, fontFamily: "'DM Mono', monospace", width: 38, textAlign: "right" }}>{pct(grandAct, grandTgt) ?? 0}%</span>
+                <span style={{ color: "rgba(255,255,255,.85)", fontSize: 13, fontFamily: "'DM Mono', monospace", width: 38, textAlign: "right" }}>{pct(c1A + c2A, c1T + c2T) ?? 0}%</span>
               </div>
             </td>
           </tr>
@@ -256,44 +309,44 @@ function UniCoreTable({ uni, actuals, onSetActuals, targets, onSetTargets, edita
   );
 }
 
-// ── SUNDERLAND OTHER COURSES TABLE ────────────────────────────────────────────
-function SunderlandOtherTable({ otherAct, onSetOtherAct, editable }) {
-  const c1 = CAM.lon, c2 = CAM.sun;
-  const set   = (key, side, val) => onSetOtherAct(p => ({ ...p, [key]: { ...p[key], [side]: val } }));
-  const lonT  = UNI.sunderland.otherCourses.reduce((s, c) => s + n(otherAct[c]?.lon), 0);
-  const sunT  = UNI.sunderland.otherCourses.reduce((s, c) => s + n(otherAct[c]?.sun), 0);
+// ── OTHER COURSES TABLE (generic) ─────────────────────────────────────────────
+function OtherTable({ courseList, otherAct, onSetOtherAct, c1key, c2key, editable }) {
+  const c1 = CAM[c1key], c2 = CAM[c2key];
+  const set  = (key, side, val) => onSetOtherAct(p => ({ ...p, [key]: { ...p[key], [side]: val } }));
+  const tot1 = courseList.reduce((s, c) => s + n(otherAct[c]?.[c1key]), 0);
+  const tot2 = courseList.reduce((s, c) => s + n(otherAct[c]?.[c2key]), 0);
   return (
     <div style={{ overflowX: "auto" }}>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr>
             <th style={TH}>Course</th>
-            <th style={{ ...TH, ...TC, background: c1.bg, borderLeft: `2px solid ${c1.sep}` }}>London</th>
-            <th style={{ ...TH, ...TC, background: c2.bg, borderLeft: `2px solid ${c2.sep}` }}>Sunderland</th>
+            <th style={{ ...TH, ...TC, background: c1.bg, borderLeft: `2px solid ${c1.sep}` }}>{c1.label}</th>
+            <th style={{ ...TH, ...TC, background: c2.bg, borderLeft: `2px solid ${c2.sep}` }}>{c2.label}</th>
             <th style={{ ...TH, ...TC, borderLeft: `2px solid ${B.border}` }}>Total</th>
           </tr>
         </thead>
         <tbody>
-          {UNI.sunderland.otherCourses.map((c, i) => {
-            const l = n(otherAct[c]?.lon), s = n(otherAct[c]?.sun);
+          {courseList.map((c, i) => {
+            const v1 = n(otherAct[c]?.[c1key]), v2 = n(otherAct[c]?.[c2key]);
             return (
               <tr key={c} style={{ background: i % 2 ? B.silverLight : B.white }}>
                 <td style={{ ...TD, fontWeight: 600, color: B.ink }}>{c}</td>
                 <td style={{ ...TD, ...TC, background: c1.bg, borderLeft: `2px solid ${c1.sep}` }}>
-                  <NumInput value={otherAct[c]?.lon || ""} accent={c1.col} onChange={v => set(c, "lon", v)} readOnly={!editable} />
+                  <NumInput value={otherAct[c]?.[c1key] || ""} accent={c1.col} onChange={v => set(c, c1key, v)} readOnly={!editable} />
                 </td>
                 <td style={{ ...TD, ...TC, background: c2.bg, borderLeft: `2px solid ${c2.sep}` }}>
-                  <NumInput value={otherAct[c]?.sun || ""} accent={c2.col} onChange={v => set(c, "sun", v)} readOnly={!editable} />
+                  <NumInput value={otherAct[c]?.[c2key] || ""} accent={c2.col} onChange={v => set(c, c2key, v)} readOnly={!editable} />
                 </td>
-                <td style={{ ...TD, ...TC, fontWeight: 800, fontSize: 16, color: l + s > 0 ? B.ink : B.border, borderLeft: `2px solid ${B.border}`, fontFamily: "'DM Mono', monospace" }}>{l + s || "—"}</td>
+                <td style={{ ...TD, ...TC, fontWeight: 800, fontSize: 16, color: v1 + v2 > 0 ? B.ink : B.border, borderLeft: `2px solid ${B.border}`, fontFamily: "'DM Mono', monospace" }}>{v1 + v2 || "—"}</td>
               </tr>
             );
           })}
           <tr style={{ background: B.purple }}>
             <td style={{ ...TD, color: B.white, fontWeight: 800 }}>TOTALS</td>
-            <td style={{ ...TD, ...TC, color: "#e9d5ff", fontWeight: 800, fontSize: 17, background: "rgba(255,255,255,.1)", borderLeft: "2px solid rgba(255,255,255,.15)", fontFamily: "'DM Mono', monospace" }}>{lonT}</td>
-            <td style={{ ...TD, ...TC, color: "#fde68a", fontWeight: 800, fontSize: 17, background: "rgba(255,255,255,.08)", borderLeft: "2px solid rgba(255,255,255,.15)", fontFamily: "'DM Mono', monospace" }}>{sunT}</td>
-            <td style={{ ...TD, ...TC, color: B.white, fontWeight: 800, fontSize: 19, borderLeft: "2px solid rgba(255,255,255,.15)", fontFamily: "'DM Mono', monospace" }}>{lonT + sunT}</td>
+            <td style={{ ...TD, ...TC, color: "#e9d5ff", fontWeight: 800, fontSize: 17, background: "rgba(255,255,255,.1)", borderLeft: "2px solid rgba(255,255,255,.15)", fontFamily: "'DM Mono', monospace" }}>{tot1}</td>
+            <td style={{ ...TD, ...TC, color: "#fde68a", fontWeight: 800, fontSize: 17, background: "rgba(255,255,255,.08)", borderLeft: "2px solid rgba(255,255,255,.15)", fontFamily: "'DM Mono', monospace" }}>{tot2}</td>
+            <td style={{ ...TD, ...TC, color: B.white, fontWeight: 800, fontSize: 19, borderLeft: "2px solid rgba(255,255,255,.15)", fontFamily: "'DM Mono', monospace" }}>{tot1 + tot2}</td>
           </tr>
         </tbody>
       </table>
@@ -335,62 +388,60 @@ const SUN = UNI.sunderland;
 const YSJ = UNI.ysj;
 
 export default function App() {
-  // Sunderland state
   const [sunActuals,  setSunActuals]  = useState(() => blankActuals(SUN.courses, "lon", "sun"));
   const [sunTargets,  setSunTargets]  = useState(() => buildDefaultTargets(SUN.courses, "lon", "sun"));
   const [sunOther,    setSunOther]    = useState(() => blankOther(SUN.otherCourses));
-  // YSJ state
   const [ysjActuals,  setYsjActuals]  = useState(() => blankActuals(YSJ.courses, "lon", "york"));
   const [ysjTargets,  setYsjTargets]  = useState(() => buildDefaultTargets(YSJ.courses, "lon", "york"));
-  // UI state
-  const [uni,         setUni]         = useState("sunderland"); // active university tab
+  const [ysjOther,    setYsjOther]    = useState(() => blankOther(YSJ.otherCourses));
+  const [uni,         setUni]         = useState("sunderland");
   const [subTab,      setSubTab]      = useState("core");
   const [editable,    setEditable]    = useState(false);
   const [showModal,   setShowModal]   = useState(false);
   const [loading,     setLoading]     = useState(true);
   const [saving,      setSaving]      = useState(false);
   const [updatedAt,   setUpdatedAt]   = useState(null);
-  const [logoData,    setLogoData]    = useState(null); // base64 logo
+  const [logoData,    setLogoData]    = useState(null);
 
-  // Refs for debounced save
-  const refs = useRef({});
-  refs.current = { sunActuals, sunTargets, sunOther, ysjActuals, ysjTargets, logoData };
-  const saveTimer   = useRef(null);
-  const editableRef = useRef(editable);
-  useEffect(() => { editableRef.current = editable; }, [editable]);
+  const refs      = useRef({});
+  refs.current    = { sunActuals, sunTargets, sunOther, ysjActuals, ysjTargets, ysjOther, logoData };
+  const saveTimer = useRef(null);
+  const editRef   = useRef(editable);
+  useEffect(() => { editRef.current = editable; }, [editable]);
 
-  // ── Load ────────────────────────────────────────────────────────────────────
+  // ── Load & realtime ─────────────────────────────────────────────────────────
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase.from("tracker_data").select("*").eq("id", 1).single();
       if (data) {
-        if (data.actuals)       setSunActuals(data.actuals);
-        if (data.targets && Object.keys(data.targets).length) setSunTargets(data.targets);
-        if (data.other_actuals) setSunOther(data.other_actuals);
+        if (data.actuals)                                       setSunActuals(data.actuals);
+        if (data.targets && Object.keys(data.targets).length)  setSunTargets(data.targets);
+        if (data.other_actuals)                                setSunOther(data.other_actuals);
         if (data.ysj_actuals && Object.keys(data.ysj_actuals).length) setYsjActuals(data.ysj_actuals);
         if (data.ysj_targets && Object.keys(data.ysj_targets).length) setYsjTargets(data.ysj_targets);
-        if (data.logo_data)     setLogoData(data.logo_data);
-        if (data.updated_at)    setUpdatedAt(new Date(data.updated_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }));
+        if (data.ysj_other_actuals)                            setYsjOther(data.ysj_other_actuals);
+        if (data.logo_data)                                    setLogoData(data.logo_data);
+        if (data.updated_at) setUpdatedAt(new Date(data.updated_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }));
       }
       setLoading(false);
     };
     load();
-    const channel = supabase.channel("tracker_realtime")
+    const ch = supabase.channel("tracker_rt")
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "tracker_data" }, ({ new: row }) => {
-        if (!editableRef.current) {
-          if (row.actuals)       setSunActuals(row.actuals);
-          if (row.targets && Object.keys(row.targets).length) setSunTargets(row.targets);
-          if (row.other_actuals) setSunOther(row.other_actuals);
-          if (row.ysj_actuals && Object.keys(row.ysj_actuals).length) setYsjActuals(row.ysj_actuals);
-          if (row.ysj_targets && Object.keys(row.ysj_targets).length) setYsjTargets(row.ysj_targets);
-          if (row.logo_data)     setLogoData(row.logo_data);
-          if (row.updated_at)    setUpdatedAt(new Date(row.updated_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }));
-        }
+        if (editRef.current) return;
+        if (row.actuals)                                       setSunActuals(row.actuals);
+        if (row.targets && Object.keys(row.targets).length)   setSunTargets(row.targets);
+        if (row.other_actuals)                                 setSunOther(row.other_actuals);
+        if (row.ysj_actuals && Object.keys(row.ysj_actuals).length) setYsjActuals(row.ysj_actuals);
+        if (row.ysj_targets && Object.keys(row.ysj_targets).length) setYsjTargets(row.ysj_targets);
+        if (row.ysj_other_actuals)                             setYsjOther(row.ysj_other_actuals);
+        if (row.logo_data)                                     setLogoData(row.logo_data);
+        if (row.updated_at) setUpdatedAt(new Date(row.updated_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }));
       }).subscribe();
-    return () => supabase.removeChannel(channel);
+    return () => supabase.removeChannel(ch);
   }, []);
 
-  // ── Save ────────────────────────────────────────────────────────────────────
+  // ── Debounced save ───────────────────────────────────────────────────────────
   const scheduleSave = useCallback(() => {
     clearTimeout(saveTimer.current);
     setSaving(true);
@@ -399,7 +450,7 @@ export default function App() {
       const r = refs.current;
       await supabase.from("tracker_data").update({
         actuals: r.sunActuals, targets: r.sunTargets, other_actuals: r.sunOther,
-        ysj_actuals: r.ysjActuals, ysj_targets: r.ysjTargets,
+        ysj_actuals: r.ysjActuals, ysj_targets: r.ysjTargets, ysj_other_actuals: r.ysjOther,
         logo_data: r.logoData, updated_at: now,
       }).eq("id", 1);
       setSaving(false);
@@ -407,53 +458,46 @@ export default function App() {
     }, 800);
   }, []);
 
-  const mkSetter = (setter) => useCallback((u) => {
-    setter(p => { const next = typeof u === "function" ? u(p) : u; if (editableRef.current) scheduleSave(); return next; });
+  const mkHandler = (setter) => useCallback((u) => {
+    setter(p => { const x = typeof u === "function" ? u(p) : u; if (editRef.current) scheduleSave(); return x; });
   }, [scheduleSave]);
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const handleSunActuals  = useCallback(u => { setSunActuals(p  => { const x = typeof u === "function" ? u(p)  : u; if (editableRef.current) scheduleSave(); return x; }); }, [scheduleSave]);
+  const hSunA  = useCallback(u => { setSunActuals(p => { const x = typeof u==="function"?u(p):u; if(editRef.current) scheduleSave(); return x; }); }, [scheduleSave]);
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const handleSunTargets  = useCallback(u => { setSunTargets(p  => { const x = typeof u === "function" ? u(p)  : u; if (editableRef.current) scheduleSave(); return x; }); }, [scheduleSave]);
+  const hSunT  = useCallback(u => { setSunTargets(p => { const x = typeof u==="function"?u(p):u; if(editRef.current) scheduleSave(); return x; }); }, [scheduleSave]);
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const handleSunOther    = useCallback(u => { setSunOther(p    => { const x = typeof u === "function" ? u(p)  : u; if (editableRef.current) scheduleSave(); return x; }); }, [scheduleSave]);
+  const hSunO  = useCallback(u => { setSunOther(p  => { const x = typeof u==="function"?u(p):u; if(editRef.current) scheduleSave(); return x; }); }, [scheduleSave]);
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const handleYsjActuals  = useCallback(u => { setYsjActuals(p  => { const x = typeof u === "function" ? u(p)  : u; if (editableRef.current) scheduleSave(); return x; }); }, [scheduleSave]);
+  const hYsjA  = useCallback(u => { setYsjActuals(p=> { const x = typeof u==="function"?u(p):u; if(editRef.current) scheduleSave(); return x; }); }, [scheduleSave]);
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const handleYsjTargets  = useCallback(u => { setYsjTargets(p  => { const x = typeof u === "function" ? u(p)  : u; if (editableRef.current) scheduleSave(); return x; }); }, [scheduleSave]);
+  const hYsjT  = useCallback(u => { setYsjTargets(p=> { const x = typeof u==="function"?u(p):u; if(editRef.current) scheduleSave(); return x; }); }, [scheduleSave]);
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const hYsjO  = useCallback(u => { setYsjOther(p  => { const x = typeof u==="function"?u(p):u; if(editRef.current) scheduleSave(); return x; }); }, [scheduleSave]);
 
-  // ── Logo upload ─────────────────────────────────────────────────────────────
+  // ── Logo upload ──────────────────────────────────────────────────────────────
   const handleLogoUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
-      const b64 = reader.result;
-      setLogoData(b64);
-      if (editableRef.current) scheduleSave();
-    };
+    reader.onload = () => { setLogoData(reader.result); if (editRef.current) scheduleSave(); };
     reader.readAsDataURL(file);
   };
 
-  // ── Totals ──────────────────────────────────────────────────────────────────
-  const sunLon = SUN.courses.reduce((s, c) => s + n(sunActuals[c.name]?.lon), 0);
-  const sunSun = SUN.courses.reduce((s, c) => s + n(sunActuals[c.name]?.sun), 0);
-  const sunTot = sunLon + sunSun;
+  // ── Totals ───────────────────────────────────────────────────────────────────
+  const sunTot = SUN.courses.reduce((s, c) => s + n(sunActuals[c.name]?.lon) + n(sunActuals[c.name]?.sun), 0);
   const sunTgt = SUN.courses.reduce((s, c) => s + n(sunTargets[c.name]?.lon) + n(sunTargets[c.name]?.sun), 0);
-  const ysjLon = YSJ.courses.reduce((s, c) => s + n(ysjActuals[c.name]?.lon), 0);
-  const ysjYork= YSJ.courses.reduce((s, c) => s + n(ysjActuals[c.name]?.york), 0);
-  const ysjTot = ysjLon + ysjYork;
+  const ysjTot = YSJ.courses.reduce((s, c) => s + n(ysjActuals[c.name]?.lon) + n(ysjActuals[c.name]?.york), 0);
   const ysjTgt = YSJ.courses.reduce((s, c) => s + n(ysjTargets[c.name]?.lon) + n(ysjTargets[c.name]?.york), 0);
-  const grandTot = sunTot + ysjTot;
-  const grandTgt = sunTgt + ysjTgt;
+  const sunOtherTot = SUN.otherCourses.reduce((s, c) => s + n(sunOther[c]?.lon) + n(sunOther[c]?.sun), 0);
+  const ysjOtherTot = YSJ.otherCourses.reduce((s, c) => s + n(ysjOther[c]?.lon) + n(ysjOther[c]?.york), 0);
 
   const uniBtn = (id, label, color) => (
     <button onClick={() => { setUni(id); setSubTab("core"); }} style={{ padding: "12px 28px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "'DM Sans', sans-serif", borderRadius: "10px 10px 0 0", background: uni === id ? B.white : "transparent", color: uni === id ? color : B.inkMid, borderBottom: uni === id ? `3px solid ${color}` : "3px solid transparent", transition: "all .15s" }}>
       {label}
     </button>
   );
-
-  const subTabBtn = (id, label) => (
+  const subBtn = (id, label) => (
     <button onClick={() => setSubTab(id)} style={{ padding: "8px 18px", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: "'DM Sans', sans-serif", borderRadius: 6, background: subTab === id ? B.purpleLight : "transparent", color: subTab === id ? B.purple : B.inkMid, transition: "all .15s" }}>
       {label}
     </button>
@@ -469,14 +513,12 @@ export default function App() {
   return (
     <>
       {showModal && <PasscodeModal onSuccess={() => { setEditable(true); setShowModal(false); }} onClose={() => setShowModal(false)} />}
-
       <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: B.silverLight, minHeight: "100vh" }}>
 
-        {/* ── HEADER ── */}
+        {/* HEADER */}
         <div style={{ background: B.purple, padding: "0 36px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", padding: "20px 0 0" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              {/* Logo area */}
               <div style={{ position: "relative" }}>
                 {logoData
                   ? <img src={logoData} alt="Study Now" style={{ height: 44, width: 44, borderRadius: 10, objectFit: "contain", background: "rgba(255,255,255,.15)" }} />
@@ -485,7 +527,7 @@ export default function App() {
                     </div>
                 }
                 {editable && (
-                  <label title="Upload logo" style={{ position: "absolute", inset: 0, cursor: "pointer", borderRadius: 12, background: "rgba(0,0,0,.35)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity .15s" }}
+                  <label title="Upload logo" style={{ position: "absolute", inset: 0, cursor: "pointer", borderRadius: 12, background: "rgba(0,0,0,.4)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity .15s" }}
                     onMouseEnter={e => e.currentTarget.style.opacity = 1}
                     onMouseLeave={e => e.currentTarget.style.opacity = 0}
                   >
@@ -500,10 +542,8 @@ export default function App() {
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-              {saving
-                ? <span style={{ fontSize: 11, color: "rgba(255,255,255,.65)", fontStyle: "italic" }}>💾 Saving…</span>
-                : updatedAt && <span style={{ fontSize: 11, color: "rgba(255,255,255,.55)", fontStyle: "italic" }}>Updated {updatedAt}</span>
-              }
+              {saving ? <span style={{ fontSize: 11, color: "rgba(255,255,255,.65)", fontStyle: "italic" }}>💾 Saving…</span>
+                      : updatedAt && <span style={{ fontSize: 11, color: "rgba(255,255,255,.55)", fontStyle: "italic" }}>Updated {updatedAt}</span>}
               {editable
                 ? <button onClick={() => setEditable(false)} style={{ background: B.green, border: "none", color: B.white, padding: "9px 18px", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>🔓 Editing — Lock</button>
                 : <button onClick={() => setShowModal(true)} style={{ background: "rgba(255,255,255,.15)", border: "1px solid rgba(255,255,255,.3)", color: B.white, padding: "9px 18px", borderRadius: 9, cursor: "pointer", fontWeight: 600, fontSize: 13, fontFamily: "'DM Sans', sans-serif", transition: "background .15s" }}
@@ -520,53 +560,54 @@ export default function App() {
           </div>
         </div>
 
-        {/* ── VIEW-ONLY BANNER ── */}
+        {/* VIEW-ONLY BANNER */}
         {!editable && (
           <div style={{ background: B.purpleLight, borderBottom: `1px solid ${B.purpleMid}`, padding: "8px 36px", fontSize: 12, color: B.inkMid, fontWeight: 500, display: "flex", alignItems: "center", gap: 8 }}>
-            👁️ View-only mode — click <strong style={{ color: B.purple, marginLeft: 3 }}>🔒 Edit</strong> and enter the passcode to update figures, targets, or upload a logo.
+            👁️ View-only — click <strong style={{ color: B.purple, marginLeft: 3 }}>🔒 Edit</strong> and enter the passcode to update figures, targets, or upload a logo.
           </div>
         )}
 
         <div style={{ padding: "28px 36px" }}>
 
-          {/* ── COMBINED OVERVIEW KPIs ── */}
-          <div style={{ marginBottom: 8 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: B.inkLight, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 12 }}>Overall · Study Now</div>
-            <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-              <KpiCard label="Total Deposits" value={grandTot} max={grandTgt} color={B.purple} size="large" />
-              <KpiCard label="Univ. of Sunderland" value={sunTot} max={sunTgt} color={SUN.color} />
-              <KpiCard label="York St John"   value={ysjTot} max={ysjTgt} color={YSJ.color} />
-              <KpiCard label="Other (Sunderland)" value={SUN.otherCourses.reduce((s, c) => s + n(sunOther[c]?.lon) + n(sunOther[c]?.sun), 0)} sub="no target set" color={B.inkLight} />
-            </div>
+          {/* COMBINED KPIs */}
+          <div style={{ fontSize: 11, fontWeight: 700, color: B.inkLight, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 12 }}>Overall · Study Now</div>
+          <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 28 }}>
+            <KpiCard label="Total Deposits"        value={sunTot + ysjTot} max={sunTgt + ysjTgt} color={B.purple} size="large" />
+            <KpiCard label="Univ. of Sunderland"   value={sunTot}          max={sunTgt}           color={SUN.color} />
+            <KpiCard label="York St John"           value={ysjTot}          max={ysjTgt}           color={YSJ.color} />
+            <KpiCard label="Other (Sunderland)"    value={sunOtherTot}     sub="no target set"    color={B.inkLight} />
+            <KpiCard label="Other (York St John)"  value={ysjOtherTot}     sub="no target set"    color={B.inkLight} />
           </div>
 
-          <div style={{ height: 1, background: B.border, margin: "24px 0" }} />
+          <div style={{ height: 1, background: B.border, marginBottom: 24 }} />
 
-          {/* ── UNIVERSITY TABS ── */}
-          <div style={{ borderBottom: `2px solid ${B.border}`, display: "flex", gap: 2, marginBottom: 0 }}>
+          {/* UNIVERSITY TABS */}
+          <div style={{ borderBottom: `2px solid ${B.border}`, display: "flex", gap: 2 }}>
             {uniBtn("sunderland", "🎓 University of Sunderland", SUN.color)}
             {uniBtn("ysj",        "🎓 York St John University",  YSJ.color)}
           </div>
 
           <div style={{ background: B.white, borderRadius: "0 12px 12px 12px", border: `1px solid ${B.border}`, borderTop: "none", boxShadow: "0 2px 12px rgba(123,47,255,.06)" }}>
-
             {/* Sub-tab bar */}
             <div style={{ padding: "12px 16px 0", borderBottom: `1px solid ${B.border}`, display: "flex", gap: 6, background: B.silverLight, borderRadius: "0 12px 0 0" }}>
-              {subTabBtn("core", "Core Courses")}
-              {uni === "sunderland" && subTabBtn("other", "Other Courses")}
+              {subBtn("core",  "Core Courses")}
+              {subBtn("other", "Other Courses")}
             </div>
 
             {/* Sunderland */}
             {uni === "sunderland" && subTab === "core" && (
-              <UniCoreTable uni={SUN} actuals={sunActuals} onSetActuals={handleSunActuals} targets={sunTargets} onSetTargets={handleSunTargets} editable={editable} />
+              <UniCoreTable uni={SUN} actuals={sunActuals} onSetActuals={hSunA} targets={sunTargets} onSetTargets={hSunT} editable={editable} />
             )}
             {uni === "sunderland" && subTab === "other" && (
-              <SunderlandOtherTable otherAct={sunOther} onSetOtherAct={handleSunOther} editable={editable} />
+              <OtherTable courseList={SUN.otherCourses} otherAct={sunOther} onSetOtherAct={hSunO} c1key="lon" c2key="sun" editable={editable} />
             )}
 
             {/* York St John */}
             {uni === "ysj" && subTab === "core" && (
-              <UniCoreTable uni={YSJ} actuals={ysjActuals} onSetActuals={handleYsjActuals} targets={ysjTargets} onSetTargets={handleYsjTargets} editable={editable} />
+              <UniCoreTable uni={YSJ} actuals={ysjActuals} onSetActuals={hYsjA} targets={ysjTargets} onSetTargets={hYsjT} editable={editable} />
+            )}
+            {uni === "ysj" && subTab === "other" && (
+              <OtherTable courseList={YSJ.otherCourses} otherAct={ysjOther} onSetOtherAct={hYsjO} c1key="lon" c2key="york" editable={editable} />
             )}
           </div>
 
@@ -575,7 +616,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* ── FOOTER ── */}
+        {/* FOOTER */}
         <div style={{ borderTop: `1px solid ${B.border}`, padding: "16px 36px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 22, height: 22, borderRadius: 6, background: B.purple, display: "flex", alignItems: "center", justifyContent: "center" }}>
