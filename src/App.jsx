@@ -170,6 +170,36 @@ function Num({ value, onChange, accent, readOnly }) {
   );
 }
 
+// ── ACTUAL DEPOSITS CARD ──────────────────────────────────────────────────────
+function ActualDepositsCard({ views }) {
+  const [active, setActive] = useState(0);
+  const v = views[active];
+  return (
+    <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 14, padding: "20px 22px", flex: "0 0 260px", boxShadow: "0 1px 3px rgba(0,0,0,.04)", display: "flex", flexDirection: "column" }}>
+      <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 700, color: T.inkL, letterSpacing: ".07em", textTransform: "uppercase" }}>Actual Deposits</p>
+      {/* Toggle pills */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 20 }}>
+        {views.map((view, i) => (
+          <button key={i} onClick={() => setActive(i)} style={{
+            padding: "4px 11px", border: `1.5px solid ${active === i ? view.accent : T.border}`,
+            borderRadius: 99, fontSize: 11, fontWeight: 600, cursor: "pointer",
+            background: active === i ? `${view.accent}15` : T.white,
+            color: active === i ? view.accent : T.inkL,
+            fontFamily: "inherit", transition: "all .15s",
+          }}>
+            {view.label}
+          </button>
+        ))}
+      </div>
+      {/* Big number */}
+      <p style={{ margin: "0 0 5px", fontSize: 60, fontWeight: 800, color: v.accent, fontFamily: "ui-monospace, monospace", lineHeight: 1 }}>
+        {v.value}
+      </p>
+      <p style={{ margin: 0, fontSize: 12, color: T.inkL, fontWeight: 500 }}>{v.sublabel}</p>
+    </div>
+  );
+}
+
 // ── STAT CARD ─────────────────────────────────────────────────────────────────
 function StatCard({ label, value, max, sub, accent }) {
   const p = max ? pct(value, max) : null;
@@ -643,18 +673,18 @@ export default function App() {
       <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: T.bg, minHeight: "100vh" }}>
 
         {/* ── HEADER ── */}
-        <div style={{ background: T.header, padding: "18px 40px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+        <div style={{ background: T.white, borderBottom: `3px solid ${T.purple}`, padding: "14px 40px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, boxShadow: "0 1px 4px rgba(0,0,0,.06)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             {/* Logo */}
             <div style={{ position: "relative", flexShrink: 0 }}>
               {logo
-                ? <img src={logo} alt="Study Now" style={{ width: 40, height: 40, borderRadius: 10, objectFit: "contain", background: "rgba(255,255,255,.12)" }} />
-                : <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(255,255,255,.14)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span style={{ fontSize: 13, fontWeight: 900, color: "rgba(255,255,255,.7)" }}>SN</span>
+                ? <img src={logo} alt="Study Now" style={{ width: 44, height: 44, borderRadius: 10, objectFit: "contain" }} />
+                : <div style={{ width: 44, height: 44, borderRadius: 10, background: T.purple, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ fontSize: 13, fontWeight: 900, color: T.white, letterSpacing: "-.5px" }}>SN</span>
                   </div>
               }
               {editable && (
-                <label style={{ position: "absolute", inset: 0, cursor: "pointer", borderRadius: 10, background: "rgba(0,0,0,.45)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity .15s" }}
+                <label style={{ position: "absolute", inset: 0, cursor: "pointer", borderRadius: 10, background: "rgba(0,0,0,.4)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity .15s" }}
                   onMouseEnter={e => e.currentTarget.style.opacity = 1}
                   onMouseLeave={e => e.currentTarget.style.opacity = 0}
                   title="Upload logo"
@@ -665,21 +695,21 @@ export default function App() {
               )}
             </div>
             <div>
-              <p style={{ margin: "0 0 2px", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,.5)", letterSpacing: ".1em", textTransform: "uppercase" }}>Study Now</p>
-              <p style={{ margin: 0, fontSize: 20, fontWeight: 800, color: T.white, letterSpacing: "-.02em" }}>Deposit Tracker</p>
+              <p style={{ margin: "0 0 1px", fontSize: 10, fontWeight: 700, color: T.inkL, letterSpacing: ".12em", textTransform: "uppercase" }}>Study Now</p>
+              <p style={{ margin: 0, fontSize: 20, fontWeight: 800, color: T.ink, letterSpacing: "-.03em" }}>Deposit Tracker</p>
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             {saving
-              ? <span style={{ fontSize: 11, color: "rgba(255,255,255,.55)", fontStyle: "italic" }}>Saving…</span>
-              : updatedAt && <span style={{ fontSize: 11, color: "rgba(255,255,255,.45)" }}>Updated {updatedAt}</span>
+              ? <span style={{ fontSize: 11, color: T.inkL, fontStyle: "italic" }}>Saving…</span>
+              : updatedAt && <span style={{ fontSize: 11, color: T.inkL }}>Updated {updatedAt}</span>
             }
             {editable
-              ? <button onClick={() => setEditable(false)} style={{ background: T.green, border: "none", color: T.white, padding: "8px 16px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: "inherit" }}>🔓 Lock</button>
-              : <button onClick={() => setShowModal(true)} style={{ background: "rgba(255,255,255,.12)", border: "1px solid rgba(255,255,255,.22)", color: T.white, padding: "8px 16px", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: "inherit", transition: "background .15s" }}
-                  onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.2)"}
-                  onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,.12)"}
+              ? <button onClick={() => setEditable(false)} style={{ background: T.green, border: "none", color: T.white, padding: "8px 18px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: "inherit" }}>🔓 Lock</button>
+              : <button onClick={() => setShowModal(true)} style={{ background: T.purple, border: "none", color: T.white, padding: "8px 18px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: "inherit", transition: "background .15s" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "#5720C8"}
+                  onMouseLeave={e => e.currentTarget.style.background = T.purple}
                 >🔒 Edit</button>
             }
           </div>
@@ -689,23 +719,33 @@ export default function App() {
         <div style={{ padding: "32px 40px" }}>
 
           {/* STATS ROW */}
-          <div style={{ display: "flex", gap: 14, marginBottom: 36, flexWrap: "wrap", alignItems: "stretch" }}>
+          {/* Row 1: Actual deposits switcher + cycling hero */}
+          <div style={{ display: "flex", gap: 14, marginBottom: 14, flexWrap: "wrap", alignItems: "stretch" }}>
+            <ActualDepositsCard views={[
+              { label: "All",            value: grandTot, accent: T.purple, sublabel: "Total across all universities & intakes" },
+              { label: "Sunderland",     value: sunTot,   accent: T.teal,   sublabel: "University of Sunderland · Aug–Nov 2026" },
+              { label: "YSJ Sep 2026",   value: ysjsTot,  accent: T.amber,  sublabel: "York St John · September 2026 intake"  },
+              { label: "YSJ Jan 2027",   value: ysjjTot,  accent: T.amber,  sublabel: "York St John · January 2027 intake"    },
+            ]} />
             <HeroCard slides={[
-              { label: "Study Now · All Deposits", value: grandTot, max: grandTgt, accent: T.purple },
-              { label: "University of Sunderland",  value: sunTot,  max: sunTgt,  accent: T.teal  },
-              { label: "York St John · Sep 2026",   value: ysjsTot, max: ysjsTgt, accent: T.amber },
-              { label: "York St John · Jan 2027",   value: ysjjTot, max: ysjjTgt > 0 ? ysjjTgt : undefined, sub: ysjjTgt === 0 ? "Targets not yet set" : undefined, accent: T.amber },
+              { label: "Study Now · All vs Target",  value: grandTot, max: grandTgt, accent: T.purple },
+              { label: "University of Sunderland",   value: sunTot,   max: sunTgt,   accent: T.teal   },
+              { label: "York St John · Sep 2026",    value: ysjsTot,  max: ysjsTgt,  accent: T.amber  },
+              { label: "York St John · Jan 2027",    value: ysjjTot,  max: ysjjTgt > 0 ? ysjjTgt : undefined, sub: ysjjTgt === 0 ? "Targets not yet set" : undefined, accent: T.amber },
               { label: "Breakdown", isPie: true,
                 segments: [
-                  { label: "Sunderland",    value: sunTot,   color: T.teal  },
-                  { label: "YSJ Sep 2026",  value: ysjsTot,  color: T.amber },
-                  { label: "YSJ Jan 2027",  value: ysjjTot,  color: "#E8A030" },
+                  { label: "Sunderland",   value: sunTot,  color: T.teal  },
+                  { label: "YSJ Sep 2026", value: ysjsTot, color: T.amber },
+                  { label: "YSJ Jan 2027", value: ysjjTot, color: "#E8A030" },
                 ],
                 total: grandTot, accent: T.purple,
               },
             ]} />
-            <StatCard label="Univ. of Sunderland"  value={sunTot}   max={sunTgt}                         accent={T.teal}  />
-            <StatCard label="YSJ · Sep 2026"       value={ysjsTot}  max={ysjsTgt}                        accent={T.amber} />
+          </div>
+          {/* Row 2: Individual target cards */}
+          <div style={{ display: "flex", gap: 14, marginBottom: 36, flexWrap: "wrap" }}>
+            <StatCard label="Univ. of Sunderland"  value={sunTot}   max={sunTgt}                             accent={T.teal}  />
+            <StatCard label="YSJ · Sep 2026"       value={ysjsTot}  max={ysjsTgt}                            accent={T.amber} />
             <StatCard label="YSJ · Jan 2027"       value={ysjjTot}  max={ysjjTgt > 0 ? ysjjTgt : undefined} sub={ysjjTgt === 0 ? "Targets not set" : undefined} accent={T.amber} />
           </div>
 
