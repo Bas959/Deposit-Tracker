@@ -12,6 +12,7 @@ const T = {
   purple:  "#6C27E8",
   purpleL: "#F0EAFF",
   purpleM: "#D8C8FF",
+  header:  "#0C0720",
   teal:    "#0B7EA3",
   tealL:   "#E6F7FF",
   amber:   "#C96A00",
@@ -170,15 +171,15 @@ function Num({ value, onChange, accent, readOnly }) {
 }
 
 // ── STAT CARD ─────────────────────────────────────────────────────────────────
-function StatCard({ label, value, max, sub, accent, hero }) {
+function StatCard({ label, value, max, sub, accent }) {
   const p = max ? pct(value, max) : null;
   return (
-    <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 14, padding: hero ? "24px 28px" : "18px 22px", flex: 1, minWidth: hero ? 200 : 150, transition: "box-shadow .2s", boxShadow: "0 1px 3px rgba(0,0,0,.04)" }}
+    <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 14, padding: "18px 22px", flex: 1, minWidth: 150, transition: "box-shadow .2s", boxShadow: "0 1px 3px rgba(0,0,0,.04)" }}
       onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 16px rgba(108,39,232,.1)"}
       onMouseLeave={e => e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,.04)"}
     >
       <p style={{ margin: "0 0 10px", fontSize: 11, fontWeight: 700, color: T.inkL, letterSpacing: ".07em", textTransform: "uppercase" }}>{label}</p>
-      <p style={{ margin: 0, fontSize: hero ? 48 : 36, fontWeight: 800, color: accent, fontFamily: "ui-monospace, monospace", lineHeight: 1 }}>{value}</p>
+      <p style={{ margin: 0, fontSize: 36, fontWeight: 800, color: accent, fontFamily: "ui-monospace, monospace", lineHeight: 1 }}>{value}</p>
       {max && (
         <>
           <div style={{ margin: "12px 0 6px" }}><Bar value={value} max={max} color={accent} h={6} /></div>
@@ -186,6 +187,103 @@ function StatCard({ label, value, max, sub, accent, hero }) {
         </>
       )}
       {sub && <p style={{ margin: "8px 0 0", fontSize: 11, color: T.inkL }}>{sub}</p>}
+    </div>
+  );
+}
+
+// ── DONUT CHART ───────────────────────────────────────────────────────────────
+function DonutChart({ segments, size = 100 }) {
+  const r = 38, cx = 50, cy = 50, stroke = 10;
+  const circ = 2 * Math.PI * r;
+  const total = segments.reduce((s, seg) => s + seg.value, 0);
+  let offset = 0;
+  const slices = segments.map(seg => {
+    const dash = total > 0 ? (seg.value / total) * circ : 0;
+    const gap  = circ - dash;
+    const slice = { ...seg, dash, gap, offset };
+    offset += dash;
+    return slice;
+  });
+  return (
+    <svg viewBox="0 0 100 100" width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+      {total === 0
+        ? <circle cx={cx} cy={cy} r={r} fill="none" stroke="#E8E4F0" strokeWidth={stroke} />
+        : slices.map((sl, i) => (
+            <circle key={i} cx={cx} cy={cy} r={r} fill="none"
+              stroke={sl.color} strokeWidth={stroke}
+              strokeDasharray={`${sl.dash} ${sl.gap}`}
+              strokeDashoffset={-sl.offset}
+              strokeLinecap="butt"
+            />
+          ))
+      }
+      <circle cx={cx} cy={cy} r={r - stroke / 2 - 2} fill="white" />
+    </svg>
+  );
+}
+
+// ── CYCLING HERO CARD ─────────────────────────────────────────────────────────
+function HeroCard({ slides }) {
+  const [idx, setIdx] = useState(0);
+  const [dir, setDir] = useState(1); // 1 = forward, -1 = back
+  const [anim, setAnim] = useState(false);
+
+  const go = (next) => {
+    setDir(next > idx ? 1 : -1);
+    setAnim(true);
+    setTimeout(() => { setIdx(next); setAnim(false); }, 160);
+  };
+  const prev = () => go((idx - 1 + slides.length) % slides.length);
+  const next = () => go((idx + 1) % slides.length);
+
+  const s = slides[idx];
+  const p = s.max ? pct(s.value, s.max) : null;
+
+  return (
+    <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 14, padding: "22px 24px", minWidth: 220, flex: "0 0 240px", boxShadow: "0 1px 3px rgba(0,0,0,.04)", position: "relative", overflow: "hidden" }}>
+      {/* Slide content */}
+      <div style={{ opacity: anim ? 0 : 1, transform: anim ? `translateY(${dir * 8}px)` : "translateY(0)", transition: "opacity .16s ease, transform .16s ease" }}>
+        <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 700, color: T.inkL, letterSpacing: ".08em", textTransform: "uppercase" }}>{s.label}</p>
+        {s.isPie ? (
+          <div style={{ display: "flex", alignItems: "center", gap: 14, paddingBottom: 28 }}>
+            <DonutChart segments={s.segments} size={90} />
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              {s.segments.map((seg, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 99, background: seg.color, flexShrink: 0 }} />
+                  <span style={{ fontSize: 11, color: T.inkM, fontWeight: 500 }}>{seg.label}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: seg.color, fontFamily: "ui-monospace, monospace", marginLeft: 4 }}>{seg.value}</span>
+                  {s.total > 0 && <span style={{ fontSize: 10, color: T.inkL }}>({Math.round(seg.value / s.total * 100)}%)</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <>
+            <p style={{ margin: 0, fontSize: 52, fontWeight: 800, color: s.accent, fontFamily: "ui-monospace, monospace", lineHeight: 1 }}>{s.value}</p>
+            {s.max && (
+              <>
+                <div style={{ margin: "14px 0 6px" }}><Bar value={s.value} max={s.max} color={s.accent} h={7} /></div>
+                <p style={{ margin: 0, fontSize: 11, color: T.inkL }}><span style={{ color: s.accent, fontWeight: 700 }}>{p}%</span> of {s.max} target</p>
+              </>
+            )}
+            {s.sub && <p style={{ margin: "8px 0 0", fontSize: 11, color: T.inkL }}>{s.sub}</p>}
+          </>
+        )}
+      </div>
+
+      {/* Nav arrows */}
+      <div style={{ position: "absolute", bottom: 14, right: 14, display: "flex", gap: 4 }}>
+        <button onClick={prev} style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${T.border}`, background: T.white, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", color: T.inkM }}>‹</button>
+        <button onClick={next} style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${T.border}`, background: T.white, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", color: T.inkM }}>›</button>
+      </div>
+
+      {/* Dots */}
+      <div style={{ position: "absolute", bottom: 20, left: 24, display: "flex", gap: 4 }}>
+        {slides.map((_, i) => (
+          <button key={i} onClick={() => go(i)} style={{ width: i === idx ? 16 : 6, height: 6, borderRadius: 99, border: "none", background: i === idx ? s.accent : T.border, cursor: "pointer", padding: 0, transition: "all .2s" }} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -489,12 +587,21 @@ export default function App() {
   };
 
   // ── Totals ────────────────────────────────────────────────────────────────────
-  const sunTot  = SUN_COURSES.reduce((s, c) => s + ni(sunA[c.name]?.lon)  + ni(sunA[c.name]?.sun),  0);
-  const sunTgt  = SUN_COURSES.reduce((s, c) => s + ni(sunT[c.name]?.lon)  + ni(sunT[c.name]?.sun),  0);
-  const ysjsTot = YSJ_COURSES.reduce((s, c) => s + ni(ysjA_s[c.name]?.lon) + ni(ysjA_s[c.name]?.york), 0);
-  const ysjsTgt = YSJ_COURSES.reduce((s, c) => s + ni(ysjT_s[c.name]?.lon) + ni(ysjT_s[c.name]?.york), 0);
-  const ysjjTot = YSJ_COURSES.reduce((s, c) => s + ni(ysjA_j[c.name]?.lon) + ni(ysjA_j[c.name]?.york), 0);
-  const ysjjTgt = YSJ_COURSES.reduce((s, c) => s + ni(ysjT_j[c.name]?.lon) + ni(ysjT_j[c.name]?.york), 0);
+  const sunCoreTot  = SUN_COURSES.reduce((s, c) => s + ni(sunA[c.name]?.lon)  + ni(sunA[c.name]?.sun),  0);
+  const sunTgt      = SUN_COURSES.reduce((s, c) => s + ni(sunT[c.name]?.lon)  + ni(sunT[c.name]?.sun),  0);
+  const sunOtherTot = SUN_OTHER.reduce((s, c) => s + ni(sunO[c]?.lon) + ni(sunO[c]?.sun), 0);
+  const sunTot      = sunCoreTot + sunOtherTot;
+
+  const ysjsCoreT   = YSJ_COURSES.reduce((s, c) => s + ni(ysjA_s[c.name]?.lon) + ni(ysjA_s[c.name]?.york), 0);
+  const ysjsTgt     = YSJ_COURSES.reduce((s, c) => s + ni(ysjT_s[c.name]?.lon) + ni(ysjT_s[c.name]?.york), 0);
+  const ysjsOtherT  = YSJ_OTHER.reduce((s, c) => s + ni(ysjO_s[c]?.lon) + ni(ysjO_s[c]?.york), 0);
+  const ysjsTot     = ysjsCoreT + ysjsOtherT;
+
+  const ysjjCoreT   = YSJ_COURSES.reduce((s, c) => s + ni(ysjA_j[c.name]?.lon) + ni(ysjA_j[c.name]?.york), 0);
+  const ysjjTgt     = YSJ_COURSES.reduce((s, c) => s + ni(ysjT_j[c.name]?.lon) + ni(ysjT_j[c.name]?.york), 0);
+  const ysjjOtherT  = YSJ_OTHER.reduce((s, c) => s + ni(ysjO_j[c]?.lon) + ni(ysjO_j[c]?.york), 0);
+  const ysjjTot     = ysjjCoreT + ysjjOtherT;
+
   const ysjTot  = ysjIntake === "sep26" ? ysjsTot : ysjjTot;
   const ysjTgt  = ysjIntake === "sep26" ? ysjsTgt : ysjjTgt;
   const grandTot = sunTot + ysjsTot + ysjjTot;
@@ -536,7 +643,7 @@ export default function App() {
       <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: T.bg, minHeight: "100vh" }}>
 
         {/* ── HEADER ── */}
-        <div style={{ background: T.purple, padding: "18px 40px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+        <div style={{ background: T.header, padding: "18px 40px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             {/* Logo */}
             <div style={{ position: "relative", flexShrink: 0 }}>
@@ -582,11 +689,24 @@ export default function App() {
         <div style={{ padding: "32px 40px" }}>
 
           {/* STATS ROW */}
-          <div style={{ display: "flex", gap: 14, marginBottom: 36, flexWrap: "wrap" }}>
-            <StatCard label="All Deposits" value={grandTot} max={grandTgt} accent={T.purple} hero />
-            <StatCard label="Univ. of Sunderland" value={sunTot} max={sunTgt} accent={T.teal} />
-            <StatCard label={`York St John · Sep 2026`} value={ysjsTot} max={ysjsTgt} accent={T.amber} />
-            <StatCard label={`York St John · Jan 2027`} value={ysjjTot} max={ysjjTgt > 0 ? ysjjTgt : undefined} sub={ysjjTgt === 0 ? "Targets not yet set" : undefined} accent={T.amber} />
+          <div style={{ display: "flex", gap: 14, marginBottom: 36, flexWrap: "wrap", alignItems: "stretch" }}>
+            <HeroCard slides={[
+              { label: "Study Now · All Deposits", value: grandTot, max: grandTgt, accent: T.purple },
+              { label: "University of Sunderland",  value: sunTot,  max: sunTgt,  accent: T.teal  },
+              { label: "York St John · Sep 2026",   value: ysjsTot, max: ysjsTgt, accent: T.amber },
+              { label: "York St John · Jan 2027",   value: ysjjTot, max: ysjjTgt > 0 ? ysjjTgt : undefined, sub: ysjjTgt === 0 ? "Targets not yet set" : undefined, accent: T.amber },
+              { label: "Breakdown", isPie: true,
+                segments: [
+                  { label: "Sunderland",    value: sunTot,   color: T.teal  },
+                  { label: "YSJ Sep 2026",  value: ysjsTot,  color: T.amber },
+                  { label: "YSJ Jan 2027",  value: ysjjTot,  color: "#E8A030" },
+                ],
+                total: grandTot, accent: T.purple,
+              },
+            ]} />
+            <StatCard label="Univ. of Sunderland"  value={sunTot}   max={sunTgt}                         accent={T.teal}  />
+            <StatCard label="YSJ · Sep 2026"       value={ysjsTot}  max={ysjsTgt}                        accent={T.amber} />
+            <StatCard label="YSJ · Jan 2027"       value={ysjjTot}  max={ysjjTgt > 0 ? ysjjTgt : undefined} sub={ysjjTgt === 0 ? "Targets not set" : undefined} accent={T.amber} />
           </div>
 
           {/* UNIVERSITY TABS */}
