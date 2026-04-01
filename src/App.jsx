@@ -7,234 +7,203 @@ const supabase = createClient(
 );
 const PASSCODE = import.meta.env.VITE_EDIT_PASSCODE;
 
-// ── BRAND ─────────────────────────────────────────────────────────────────────
-const B = {
-  purple:      "#7B2FFF", purpleDark: "#5A1FCC", purpleLight: "#F3EEFF", purpleMid: "#E0D0FF",
-  white:       "#FFFFFF", silver: "#D0CCD8", silverLight: "#F7F5FA",
-  ink:         "#1A1428", inkMid: "#4A4460", inkLight: "#8C84A0", border: "#E8E4F0",
-  green:       "#22c55e", amber: "#f59e0b", red: "#ef4444",
+// ── TOKENS ────────────────────────────────────────────────────────────────────
+const T = {
+  purple:  "#6C27E8",
+  purpleL: "#F0EAFF",
+  purpleM: "#D8C8FF",
+  teal:    "#0B7EA3",
+  tealL:   "#E6F7FF",
+  amber:   "#C96A00",
+  amberL:  "#FFF4E0",
+  ink:     "#16112B",
+  inkM:    "#4A4467",
+  inkL:    "#9490A8",
+  border:  "#EAE7F2",
+  bg:      "#F6F4FB",
+  white:   "#FFFFFF",
+  green:   "#16A34A",
+  red:     "#DC2626",
+  yellow:  "#CA8A04",
 };
 
+// Campus palette
 const CAM = {
-  lon:  { col: "#7B2FFF", bg: "#FAF5FF", sep: "#E9D5FF", label: "London"     },
-  sun:  { col: "#0891b2", bg: "#F0FDFF", sep: "#BAE6FD", label: "Sunderland" },
-  york: { col: "#D97706", bg: "#FFFBEB", sep: "#FDE68A", label: "York"       },
+  lon:  { col: T.purple, bg: "#FAF7FF", sep: "#D8C8FF", label: "London"      },
+  sun:  { col: T.teal,   bg: "#F0FAFF", sep: "#BAE6FD", label: "Sunderland"  },
+  york: { col: T.amber,  bg: "#FFF9F0", sep: "#FDE68A", label: "York"        },
 };
 
-// ── UNIVERSITY CONFIG ─────────────────────────────────────────────────────────
-const UNI = {
-  sunderland: {
-    id: "sunderland", shortName: "Sunderland", color: "#0891b2",
-    fullName: "University of Sunderland", campus1: "lon", campus2: "sun",
-    courses: [
-      { name: "MSc Nursing Practice – London",      lon: 20, sun:  0 },
-      { name: "MSc Public Health",                  lon: 20, sun: 40 },
-      { name: "MSc Nursing",                        lon:  0, sun: 40 },
-      { name: "MBA Business Administration",        lon: 15, sun: 25 },
-      { name: "MSc Cybersecurity",                  lon:  0, sun: 20 },
-      { name: "MSc Data Science",                   lon:  0, sun: 50 },
-      { name: "MSc Computing",                      lon:  0, sun: 40 },
-      { name: "MSc Engineering Management",         lon:  0, sun: 15 },
-      { name: "MSc Digital Marketing & Analytics",  lon:  0, sun: 20 },
-    ],
-    otherCourses: [
-      "OSPAP", "MA Education", "MA Marketing", "BSc (Hons) Nursing",
-      "BSc (Hons) Nursing Practice (Top Up)", "BSc (Hons) Health and Social Care",
-      "BEng Electronic & Electrical Engineering",
-    ],
-  },
-  ysj: {
-    id: "ysj", shortName: "York St John", color: "#D97706",
-    fullName: "York St John University", campus1: "lon", campus2: "york",
-    courses: [
-      // ── London campus ──────────────────────────────────────────────────────
-      { name: "MBA (London)",                                                             lon: 10, york:  0 },
-      { name: "MSc Global Healthcare Management",                                         lon:  5, york:  0 },
-      { name: "MSc International Project Management",                                     lon:  5, york:  0 },
-      { name: "MSc Digital Marketing",                                                    lon:  5, york:  0 },
-      { name: "MSc Public Health (YSJ)",                                                  lon:  6, york:  0 },
-      { name: "MSc Data Science (YSJ)",                                                   lon:  6, york:  0 },
-      { name: "MSc Computer Science (London)",                                            lon:  6, york:  0 },
-      { name: "MSc Computing (Top-up)",                                                   lon:  2, york:  0 },
-      { name: "MSc Business Computing (Top-up)",                                          lon:  2, york:  0 },
-      { name: "BA Global Business Management (Top-up)",                                   lon:  2, york:  0 },
-      { name: "MSc Tourism & Hospitality",                                                lon:  3, york:  0 },
-      { name: "MRes Management Studies",                                                  lon:  6, york:  0 },
-      // ── York campus — YBS ──────────────────────────────────────────────────
-      { name: "BA (Hons) Accounting and Finance",                                         lon:  0, york:  1 },
-      { name: "BA (Hons) Business Management",                                            lon:  0, york:  1 },
-      { name: "BA (Hons) International Business",                                         lon:  0, york:  1 },
-      { name: "BA (Hons) Intl Tourism & Hospitality Mgmt with Foundation Year",           lon:  0, york:  1 },
-      { name: "Masters Business Administration (York)",                                   lon:  0, york: 10 },
-      { name: "MBA Healthcare Management",                                                lon:  0, york: 10 },
-      { name: "MSc Human Resource Management",                                            lon:  0, york:  5 },
-      { name: "MSc Project Management",                                                   lon:  0, york:  5 },
-      { name: "MSc International Business",                                               lon:  0, york:  5 },
-      { name: "MRes in Business",                                                         lon:  0, york:  6 },
-      { name: "MSc Marketing",                                                            lon:  0, york:  2 },
-      { name: "MSc Strategic Digital Marketing",                                          lon:  0, york:  2 },
-      // ── York campus — Arts ─────────────────────────────────────────────────
-      { name: "MSc Product Design",                                                       lon:  0, york:  1 },
-      // ── York campus — ELP ──────────────────────────────────────────────────
-      { name: "BSc (Hons) Psychology",                                                    lon:  0, york:  1 },
-      { name: "MA TESOL",                                                                 lon:  0, york:  1 },
-      { name: "MSc Psychology of Child & Adolescent Development",                         lon:  0, york:  1 },
-      { name: "MA Education (YSJ)",                                                       lon:  0, york:  2 },
-      { name: "MRes in Psychology",                                                       lon:  0, york:  1 },
-      { name: "MRes in Education",                                                        lon:  0, york:  1 },
-      { name: "MRes in Linguistics",                                                      lon:  0, york:  1 },
-      // ── York campus — STH ──────────────────────────────────────────────────
-      { name: "BSc (Hons) Computer Science (York)",                                       lon:  0, york:  1 },
-      { name: "BSc (Hons) Software Engineering",                                          lon:  0, york:  1 },
-      { name: "BSc Cyber Security",                                                       lon:  0, york:  1 },
-      { name: "BSc (Hons) Biomedical Science",                                            lon:  0, york:  1 },
-      { name: "MRes Social Science",                                                      lon:  0, york:  1 },
-      { name: "MRes Science and Health",                                                  lon:  0, york:  1 },
-      // ── York campus — Humanities ───────────────────────────────────────────
-      { name: "MA International Politics and Security",                                   lon:  0, york:  1 },
-      { name: "MRes Humanities",                                                          lon:  0, york:  1 },
-      { name: "MSc Environmental Sustainability & Management",                            lon:  0, york:  1 },
-    ],
-    // Courses present in spreadsheet but with no Study Now target set
-    otherCourses: [
-      // YBS
-      "BA (Hons) Business Management (Level 6)",
-      "BA (Hons) International Business (Level 6)",
-      "BA (Hons) International Tourism and Hospitality Management",
-      "BA (Hons) Marketing",
-      "BA (Hons) Marketing (Level 6)",
-      // Arts
-      "BA (Hons) Film and TV Production (Level 6)",
-      "BA (Hons) Fine Art",
-      "BA (Hons) Games Design",
-      "BA (Hons) Graphic Design",
-      "BA (Hons) Graphic Design (Level 6)",
-      "BA (Hons) Interior Design",
-      "BA (Hons) Media Production",
-      "BA (Hons) Media Production (Level 6)",
-      "BA (Hons) Music Production",
-      "BA (Hons) Music Production (Level 6)",
-      "BA (Hons) Product Design",
-      "BA (Hons) Product Design (Level 6)",
-      "MA Graphic Design",
-      "MA Media Production",
-      "MA Music Production",
-      "MA Virtual and Augmented Reality",
-      "MRes in Arts",
-      // ELP
-      "BA (Hons) Children, Young People & Society (Level 6)",
-      "BA (Hons) Early Years Education and Care (Level 6)",
-      "BA (Hons) English Language and Linguistics (Level 6)",
-      "BSc (Hons) Psychology (Level 6)",
-      "Professional Doctorate in Counselling Psychology",
-      // STH
-      "BSc (Hons) Computer Science (Level 6)",
-      "BSc (Hons) Software Engineering (Level 6)",
-      "BSc Cyber Security (Level 6)",
-      "BSc Games Development",
-      "BSc (Hons) Physical Education and Sports Coaching (Level 6)",
-      "BSc (Hons) Sport and Exercise Science (Level 6)",
-      // Humanities
-      "BA (Hons) Creative Writing",
-      "BA (Hons) English Literature",
-      "BA (Hons) English Literature (Level 6)",
-      "BA (Hons) Media and Communication (Level 6)",
-      "BA (Hons) Politics and International Relations (Level 6)",
-      "MA Creative Writing",
-      "MA Publishing",
-      "MA Environment and Social Justice",
-      "MA History",
-      "MA Contemporary Literature",
-      "MA Religion in Society",
-    ],
-  },
-};
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const SUN_COURSES = [
+  { name: "MSc Nursing Practice – London",      lon: 20, sun:  0 },
+  { name: "MSc Public Health",                  lon: 20, sun: 40 },
+  { name: "MSc Nursing",                        lon:  0, sun: 40 },
+  { name: "MBA Business Administration",        lon: 15, sun: 25 },
+  { name: "MSc Cybersecurity",                  lon:  0, sun: 20 },
+  { name: "MSc Data Science",                   lon:  0, sun: 50 },
+  { name: "MSc Computing",                      lon:  0, sun: 40 },
+  { name: "MSc Engineering Management",         lon:  0, sun: 15 },
+  { name: "MSc Digital Marketing & Analytics",  lon:  0, sun: 20 },
+];
+
+const SUN_OTHER = [
+  "OSPAP", "MA Education", "MA Marketing", "BSc (Hons) Nursing",
+  "BSc (Hons) Nursing Practice (Top Up)", "BSc (Hons) Health and Social Care",
+  "BEng Electronic & Electrical Engineering",
+];
+
+const YSJ_COURSES = [
+  { name: "MBA (London)",                                                     lon: 10, york:  0 },
+  { name: "MSc Global Healthcare Management",                                 lon:  5, york:  0 },
+  { name: "MSc International Project Management",                             lon:  5, york:  0 },
+  { name: "MSc Digital Marketing",                                            lon:  5, york:  0 },
+  { name: "MSc Public Health (YSJ)",                                          lon:  6, york:  0 },
+  { name: "MSc Data Science (YSJ)",                                           lon:  6, york:  0 },
+  { name: "MSc Computer Science (London)",                                    lon:  6, york:  0 },
+  { name: "MSc Computing (Top-up)",                                           lon:  2, york:  0 },
+  { name: "MSc Business Computing (Top-up)",                                  lon:  2, york:  0 },
+  { name: "BA Global Business Management (Top-up)",                           lon:  2, york:  0 },
+  { name: "MSc Tourism & Hospitality",                                        lon:  3, york:  0 },
+  { name: "MRes Management Studies",                                          lon:  6, york:  0 },
+  { name: "BA (Hons) Accounting and Finance",                                 lon:  0, york:  1 },
+  { name: "BA (Hons) Business Management",                                    lon:  0, york:  1 },
+  { name: "BA (Hons) International Business",                                 lon:  0, york:  1 },
+  { name: "BA (Hons) Intl Tourism & Hospitality Mgmt with Foundation Year",   lon:  0, york:  1 },
+  { name: "Masters Business Administration (York)",                           lon:  0, york: 10 },
+  { name: "MBA Healthcare Management",                                        lon:  0, york: 10 },
+  { name: "MSc Human Resource Management",                                    lon:  0, york:  5 },
+  { name: "MSc Project Management",                                           lon:  0, york:  5 },
+  { name: "MSc International Business",                                       lon:  0, york:  5 },
+  { name: "MRes in Business",                                                 lon:  0, york:  6 },
+  { name: "MSc Marketing",                                                    lon:  0, york:  2 },
+  { name: "MSc Strategic Digital Marketing",                                  lon:  0, york:  2 },
+  { name: "MSc Product Design",                                               lon:  0, york:  1 },
+  { name: "BSc (Hons) Psychology",                                            lon:  0, york:  1 },
+  { name: "MA TESOL",                                                         lon:  0, york:  1 },
+  { name: "MSc Psychology of Child & Adolescent Development",                 lon:  0, york:  1 },
+  { name: "MA Education (YSJ)",                                               lon:  0, york:  2 },
+  { name: "MRes in Psychology",                                               lon:  0, york:  1 },
+  { name: "MRes in Education",                                                lon:  0, york:  1 },
+  { name: "MRes in Linguistics",                                              lon:  0, york:  1 },
+  { name: "BSc (Hons) Computer Science (York)",                               lon:  0, york:  1 },
+  { name: "BSc (Hons) Software Engineering",                                  lon:  0, york:  1 },
+  { name: "BSc Cyber Security",                                               lon:  0, york:  1 },
+  { name: "BSc (Hons) Biomedical Science",                                    lon:  0, york:  1 },
+  { name: "MRes Social Science",                                              lon:  0, york:  1 },
+  { name: "MRes Science and Health",                                          lon:  0, york:  1 },
+  { name: "MA International Politics and Security",                           lon:  0, york:  1 },
+  { name: "MRes Humanities",                                                  lon:  0, york:  1 },
+  { name: "MSc Environmental Sustainability & Management",                    lon:  0, york:  1 },
+];
+
+const YSJ_OTHER = [
+  "BA (Hons) Business Management (Level 6)", "BA (Hons) International Business (Level 6)",
+  "BA (Hons) International Tourism and Hospitality Management", "BA (Hons) Marketing",
+  "BA (Hons) Marketing (Level 6)", "BA (Hons) Film and TV Production (Level 6)",
+  "BA (Hons) Fine Art", "BA (Hons) Games Design", "BA (Hons) Graphic Design",
+  "BA (Hons) Graphic Design (Level 6)", "BA (Hons) Interior Design",
+  "BA (Hons) Media Production", "BA (Hons) Media Production (Level 6)",
+  "BA (Hons) Music Production", "BA (Hons) Music Production (Level 6)",
+  "BA (Hons) Product Design", "BA (Hons) Product Design (Level 6)",
+  "MA Graphic Design", "MA Media Production", "MA Music Production",
+  "MA Virtual and Augmented Reality", "MRes in Arts",
+  "BA (Hons) Children, Young People & Society (Level 6)",
+  "BA (Hons) Early Years Education and Care (Level 6)",
+  "BA (Hons) English Language and Linguistics (Level 6)",
+  "BSc (Hons) Psychology (Level 6)", "Professional Doctorate in Counselling Psychology",
+  "BSc (Hons) Computer Science (Level 6)", "BSc (Hons) Software Engineering (Level 6)",
+  "BSc Cyber Security (Level 6)", "BSc Games Development",
+  "BSc (Hons) Physical Education and Sports Coaching (Level 6)",
+  "BSc (Hons) Sport and Exercise Science (Level 6)", "BA (Hons) Creative Writing",
+  "BA (Hons) English Literature", "BA (Hons) English Literature (Level 6)",
+  "BA (Hons) Media and Communication (Level 6)",
+  "BA (Hons) Politics and International Relations (Level 6)",
+  "MA Creative Writing", "MA Publishing", "MA Environment and Social Justice",
+  "MA History", "MA Contemporary Literature", "MA Religion in Society",
+];
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
-function buildDefaultTargets(courses, c1, c2) {
-  return Object.fromEntries(courses.map(c => [c.name, { [c1]: c[c1] || 0, [c2]: c[c2] || 0 }]));
-}
-const blankActuals = (courses, c1, c2) => Object.fromEntries(courses.map(c => [c.name, { [c1]: "", [c2]: "" }]));
-const blankOther   = (list) => Object.fromEntries(list.map(k => [k, { lon: "", sun: "", york: "" }]));
-const n   = (v) => parseInt(v) || 0;
-const pct = (a, t) => (t > 0 ? Math.min(100, Math.round((a / t) * 100)) : null);
+const buildT = (courses, c1, c2) =>
+  Object.fromEntries(courses.map(c => [c.name, { [c1]: c[c1] || 0, [c2]: c[c2] || 0 }]));
+const blankA = (courses, c1, c2) =>
+  Object.fromEntries(courses.map(c => [c.name, { [c1]: "", [c2]: "" }]));
+const blankO = (list, c1, c2) =>
+  Object.fromEntries(list.map(k => [k, { [c1]: "", [c2]: "" }]));
 
-function statusColor(p) {
-  if (p === null) return { bg: B.silverLight, text: B.inkLight, label: "—" };
-  if (p >= 100)   return { bg: "#dcfce7", text: "#15803d", label: "Target Met ✓" };
-  if (p >= 70)    return { bg: "#fef9c3", text: "#a16207", label: "On Track" };
-  return                  { bg: "#fee2e2", text: "#b91c1c", label: "Behind" };
-}
+const ni  = (v) => parseInt(v) || 0;
+const pct = (a, t) => t > 0 ? Math.min(100, Math.round((a / t) * 100)) : null;
 
-// ── UI PRIMITIVES ─────────────────────────────────────────────────────────────
-function ProgressBar({ value, max, color, height = 7 }) {
+// ── UI ATOMS ──────────────────────────────────────────────────────────────────
+function Bar({ value, max, color, h = 5 }) {
   const w = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
   return (
-    <div style={{ background: B.purpleMid, borderRadius: 99, height, width: "100%", overflow: "hidden" }}>
-      <div style={{ width: `${w}%`, height: "100%", background: color, borderRadius: 99, transition: "width .4s cubic-bezier(.4,0,.2,1)" }} />
+    <div style={{ background: T.border, borderRadius: 99, height: h, overflow: "hidden" }}>
+      <div style={{ width: `${w}%`, height: "100%", background: color, borderRadius: 99, transition: "width .4s ease" }} />
     </div>
   );
 }
 
-function Pill({ p }) {
-  const s = statusColor(p);
-  if (p === null) return <span style={{ color: B.inkLight, fontSize: 11 }}>—</span>;
-  return <span style={{ background: s.bg, color: s.text, fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, whiteSpace: "nowrap" }}>{s.label}</span>;
+function StatusBadge({ p }) {
+  if (p === null) return <span style={{ color: T.inkL, fontSize: 11 }}>—</span>;
+  const cfg = p >= 100 ? { bg: "#DCFCE7", col: "#166534", label: "Met ✓" }
+            : p >= 70  ? { bg: "#FEF9C3", col: "#854D0E", label: "On Track" }
+                       : { bg: "#FEE2E2", col: "#991B1B", label: "Behind" };
+  return <span style={{ background: cfg.bg, color: cfg.col, fontSize: 11, fontWeight: 700, padding: "2px 9px", borderRadius: 99, whiteSpace: "nowrap" }}>{cfg.label}</span>;
 }
 
-function NumInput({ value, onChange, accent, readOnly }) {
+function Num({ value, onChange, accent, readOnly }) {
   const [focus, setFocus] = useState(false);
-  if (readOnly) return <span style={{ fontFamily: "'DM Mono', monospace", fontWeight: n(value) ? 700 : 400, color: n(value) ? accent : B.border, fontSize: 15 }}>{n(value) || "—"}</span>;
+  if (readOnly) return (
+    <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 14, fontWeight: ni(value) ? 600 : 400, color: ni(value) ? accent : T.border }}>
+      {ni(value) || "—"}
+    </span>
+  );
   return (
     <input type="number" min="0" value={value}
       onChange={e => onChange(e.target.value)}
-      onFocus={() => setFocus(true)} onBlur={() => setFocus(false)} placeholder="0"
-      style={{ width: 58, padding: "6px", textAlign: "center", fontSize: 14, fontWeight: value ? 700 : 400, color: value ? accent : B.inkLight, background: focus ? B.white : B.purpleLight, border: `1.5px solid ${focus ? accent : B.purpleMid}`, borderRadius: 7, outline: "none", transition: "all .15s", fontFamily: "'DM Mono', monospace" }}
+      onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
+      placeholder="0"
+      style={{ width: 54, padding: "5px 4px", textAlign: "center", fontSize: 13, fontWeight: value ? 600 : 400, color: value ? accent : T.inkL, background: focus ? T.white : `${accent}12`, border: `1.5px solid ${focus ? accent : `${accent}30`}`, borderRadius: 6, outline: "none", transition: "all .12s", fontFamily: "ui-monospace, monospace" }}
     />
   );
 }
 
-function KpiCard({ label, value, max, sub, color, size = "normal" }) {
+// ── STAT CARD ─────────────────────────────────────────────────────────────────
+function StatCard({ label, value, max, sub, accent, hero }) {
   const p = max ? pct(value, max) : null;
-  const big = size === "large";
   return (
-    <div style={{ background: B.white, border: `1px solid ${B.border}`, borderRadius: 16, padding: big ? "22px 28px" : "18px 22px", flex: 1, minWidth: big ? 180 : 140, boxShadow: "0 1px 4px rgba(123,47,255,.06)", transition: "box-shadow .2s" }}
-      onMouseEnter={e => e.currentTarget.style.boxShadow = "0 6px 20px rgba(123,47,255,.12)"}
-      onMouseLeave={e => e.currentTarget.style.boxShadow = "0 1px 4px rgba(123,47,255,.06)"}
+    <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 14, padding: hero ? "24px 28px" : "18px 22px", flex: 1, minWidth: hero ? 200 : 150, transition: "box-shadow .2s", boxShadow: "0 1px 3px rgba(0,0,0,.04)" }}
+      onMouseEnter={e => e.currentTarget.style.boxShadow = "0 4px 16px rgba(108,39,232,.1)"}
+      onMouseLeave={e => e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,.04)"}
     >
-      <div style={{ fontSize: 11, fontWeight: 700, color: B.inkLight, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 8 }}>{label}</div>
-      <div style={{ fontSize: big ? 44 : 34, fontWeight: 800, color, fontFamily: "'DM Mono', monospace", lineHeight: 1 }}>{value}</div>
-      {max && <><div style={{ marginTop: 12 }}><ProgressBar value={value} max={max} color={color} /></div><div style={{ fontSize: 11, color: B.inkLight, marginTop: 6 }}><span style={{ color, fontWeight: 700 }}>{p}%</span> of {max} target</div></>}
-      {sub && !max && <div style={{ fontSize: 12, color: B.inkLight, marginTop: 6 }}>{sub}</div>}
+      <p style={{ margin: "0 0 10px", fontSize: 11, fontWeight: 700, color: T.inkL, letterSpacing: ".07em", textTransform: "uppercase" }}>{label}</p>
+      <p style={{ margin: 0, fontSize: hero ? 48 : 36, fontWeight: 800, color: accent, fontFamily: "ui-monospace, monospace", lineHeight: 1 }}>{value}</p>
+      {max && (
+        <>
+          <div style={{ margin: "12px 0 6px" }}><Bar value={value} max={max} color={accent} h={6} /></div>
+          <p style={{ margin: 0, fontSize: 11, color: T.inkL }}><span style={{ color: accent, fontWeight: 700 }}>{p}%</span> of {max}</p>
+        </>
+      )}
+      {sub && <p style={{ margin: "8px 0 0", fontSize: 11, color: T.inkL }}>{sub}</p>}
     </div>
   );
 }
 
 // ── TABLE STYLES ──────────────────────────────────────────────────────────────
-const TH = { padding: "11px 14px", textAlign: "left", fontWeight: 700, fontSize: 11, letterSpacing: ".06em", textTransform: "uppercase", color: B.inkMid, borderBottom: `2px solid ${B.border}`, whiteSpace: "nowrap", background: B.silverLight };
+const TH = { padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, letterSpacing: ".05em", textTransform: "uppercase", color: T.inkM, borderBottom: `1.5px solid ${T.border}`, background: "#FAFAFA", whiteSpace: "nowrap" };
 const TC = { textAlign: "center" };
-const TD = { padding: "11px 14px", verticalAlign: "middle", fontSize: 13, borderBottom: `1px solid ${B.silverLight}` };
+const TD = { padding: "10px 14px", verticalAlign: "middle", fontSize: 13, borderBottom: `1px solid ${T.bg}` };
 
-function TotalsRow({ cols }) {
-  return (
-    <tr style={{ background: B.purple }}>
-      {cols.map((col, i) => (
-        <td key={i} style={{ ...TD, ...col.style, fontFamily: "'DM Mono', monospace" }}>{col.value}</td>
-      ))}
-    </tr>
-  );
-}
-
-// ── CORE UNIVERSITY TABLE ─────────────────────────────────────────────────────
-function UniCoreTable({ uni, actuals, onSetActuals, targets, onSetTargets, editable }) {
-  const { courses, campus1: c1key, campus2: c2key } = uni;
-  const c1 = CAM[c1key], c2 = CAM[c2key];
-  const setA = (key, side, val) => onSetActuals(p => ({ ...p, [key]: { ...p[key], [side]: val } }));
-  const setT = (key, side, val) => onSetTargets(p => ({ ...p, [key]: { ...p[key], [side]: val } }));
-  const c1A = courses.reduce((s, c) => s + n(actuals[c.name]?.[c1key]), 0);
-  const c2A = courses.reduce((s, c) => s + n(actuals[c.name]?.[c2key]), 0);
-  const c1T = courses.reduce((s, c) => s + n(targets[c.name]?.[c1key]), 0);
-  const c2T = courses.reduce((s, c) => s + n(targets[c.name]?.[c2key]), 0);
+// ── COURSE TABLE ──────────────────────────────────────────────────────────────
+function CourseTable({ courses, actuals, onSetActuals, targets, onSetTargets, c1k, c2k, editable }) {
+  const c1 = CAM[c1k], c2 = CAM[c2k];
+  const setA = (key, s, v) => onSetActuals(p => ({ ...p, [key]: { ...p[key], [s]: v } }));
+  const setT = (key, s, v) => onSetTargets(p => ({ ...p, [key]: { ...p[key], [s]: v } }));
+  const c1A = courses.reduce((s, c) => s + ni(actuals[c.name]?.[c1k]), 0);
+  const c2A = courses.reduce((s, c) => s + ni(actuals[c.name]?.[c2k]), 0);
+  const c1T = courses.reduce((s, c) => s + ni(targets[c.name]?.[c1k]), 0);
+  const c2T = courses.reduce((s, c) => s + ni(targets[c.name]?.[c2k]), 0);
 
   return (
     <div style={{ overflowX: "auto" }}>
@@ -242,64 +211,67 @@ function UniCoreTable({ uni, actuals, onSetActuals, targets, onSetTargets, edita
         <thead>
           <tr>
             <th style={TH}>Course</th>
-            <th style={{ ...TH, ...TC, background: c1.bg, borderLeft: `2px solid ${c1.sep}` }}>{c1.label}<br/>Target</th>
-            <th style={{ ...TH, ...TC, background: c1.bg }}>{c1.label}<br/>Actual</th>
-            <th style={{ ...TH, ...TC, background: c2.bg, borderLeft: `2px solid ${c2.sep}` }}>{c2.label}<br/>Target</th>
-            <th style={{ ...TH, ...TC, background: c2.bg }}>{c2.label}<br/>Actual</th>
-            <th style={{ ...TH, ...TC, borderLeft: `2px solid ${B.border}` }}>Total<br/>Target</th>
-            <th style={{ ...TH, ...TC }}>Total<br/>Actual</th>
-            <th style={{ ...TH, minWidth: 140 }}>Progress</th>
+            <th style={{ ...TH, ...TC, background: c1.bg, borderLeft: `2px solid ${c1.sep}` }}>{c1.label} Target</th>
+            <th style={{ ...TH, ...TC, background: c1.bg }}>Actual</th>
+            <th style={{ ...TH, ...TC, background: c2.bg, borderLeft: `2px solid ${c2.sep}` }}>{c2.label} Target</th>
+            <th style={{ ...TH, ...TC, background: c2.bg }}>Actual</th>
+            <th style={{ ...TH, ...TC, borderLeft: `1.5px solid ${T.border}` }}>Target</th>
+            <th style={{ ...TH, ...TC }}>Actual</th>
+            <th style={{ ...TH, minWidth: 130 }}>Progress</th>
             <th style={TH}>Status</th>
           </tr>
         </thead>
         <tbody>
           {courses.map((c, i) => {
-            const lt = n(targets[c.name]?.[c1key]), st = n(targets[c.name]?.[c2key]);
-            const la = n(actuals[c.name]?.[c1key]), sa = n(actuals[c.name]?.[c2key]);
-            const tot = la + sa, tgt = lt + st;
-            const p = pct(tot, tgt);
-            const bar = p === null ? B.inkLight : p >= 100 ? B.green : p >= 70 ? B.amber : B.red;
+            const lt = ni(targets[c.name]?.[c1k]), st = ni(targets[c.name]?.[c2k]);
+            const la = ni(actuals[c.name]?.[c1k]), sa = ni(actuals[c.name]?.[c2k]);
+            const tot = la + sa, tgt = lt + st, p = pct(tot, tgt);
+            const barCol = p === null ? T.inkL : p >= 100 ? T.green : p >= 70 ? T.yellow : T.red;
             return (
-              <tr key={c.name} style={{ background: i % 2 ? B.silverLight : B.white }}>
-                <td style={{ ...TD, fontWeight: 600, color: B.ink }}>{c.name}</td>
+              <tr key={c.name} style={{ background: i % 2 ? T.bg : T.white, transition: "background .1s" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#F0EAFF"}
+                onMouseLeave={e => e.currentTarget.style.background = i % 2 ? T.bg : T.white}
+              >
+                <td style={{ ...TD, fontWeight: 500, color: T.ink, maxWidth: 260 }}>{c.name}</td>
                 <td style={{ ...TD, ...TC, background: c1.bg, borderLeft: `2px solid ${c1.sep}` }}>
-                  <NumInput value={targets[c.name]?.[c1key] ?? ""} accent={c1.col} onChange={v => setT(c.name, c1key, v)} readOnly={!editable} />
+                  <Num value={targets[c.name]?.[c1k] ?? ""} accent={c1.col} onChange={v => setT(c.name, c1k, v)} readOnly={!editable} />
                 </td>
                 <td style={{ ...TD, ...TC, background: c1.bg }}>
-                  {lt > 0 ? <NumInput value={actuals[c.name]?.[c1key] || ""} accent={c1.col} onChange={v => setA(c.name, c1key, v)} readOnly={!editable} /> : <span style={{ color: B.border, fontSize: 12 }}>N/A</span>}
+                  {lt > 0 ? <Num value={actuals[c.name]?.[c1k] || ""} accent={c1.col} onChange={v => setA(c.name, c1k, v)} readOnly={!editable} /> : <span style={{ color: T.border }}>—</span>}
                 </td>
                 <td style={{ ...TD, ...TC, background: c2.bg, borderLeft: `2px solid ${c2.sep}` }}>
-                  <NumInput value={targets[c.name]?.[c2key] ?? ""} accent={c2.col} onChange={v => setT(c.name, c2key, v)} readOnly={!editable} />
+                  <Num value={targets[c.name]?.[c2k] ?? ""} accent={c2.col} onChange={v => setT(c.name, c2k, v)} readOnly={!editable} />
                 </td>
                 <td style={{ ...TD, ...TC, background: c2.bg }}>
-                  {st > 0 ? <NumInput value={actuals[c.name]?.[c2key] || ""} accent={c2.col} onChange={v => setA(c.name, c2key, v)} readOnly={!editable} /> : <span style={{ color: B.border, fontSize: 12 }}>N/A</span>}
+                  {st > 0 ? <Num value={actuals[c.name]?.[c2k] || ""} accent={c2.col} onChange={v => setA(c.name, c2k, v)} readOnly={!editable} /> : <span style={{ color: T.border }}>—</span>}
                 </td>
-                <td style={{ ...TD, ...TC, fontWeight: 700, borderLeft: `2px solid ${B.border}`, color: B.inkMid }}>{tgt || "—"}</td>
-                <td style={{ ...TD, ...TC, fontWeight: 800, fontSize: 16, color: tot > 0 ? B.ink : B.border, fontFamily: "'DM Mono', monospace" }}>{tot || "—"}</td>
-                <td style={{ ...TD, minWidth: 140 }}>
+                <td style={{ ...TD, ...TC, fontWeight: 600, color: T.inkM, borderLeft: `1.5px solid ${T.border}`, fontFamily: "ui-monospace, monospace" }}>{tgt || "—"}</td>
+                <td style={{ ...TD, ...TC, fontWeight: 700, fontSize: 15, color: tot > 0 ? T.ink : T.border, fontFamily: "ui-monospace, monospace" }}>{tot || "—"}</td>
+                <td style={{ ...TD, minWidth: 130 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ flex: 1 }}><ProgressBar value={tot} max={tgt} color={bar} /></div>
-                    <span style={{ fontSize: 11, color: B.inkMid, width: 34, textAlign: "right", fontFamily: "'DM Mono', monospace" }}>{p ?? 0}%</span>
+                    <div style={{ flex: 1 }}><Bar value={tot} max={tgt} color={barCol} h={6} /></div>
+                    <span style={{ fontSize: 11, color: T.inkL, width: 30, textAlign: "right", fontFamily: "ui-monospace, monospace" }}>{p ?? 0}%</span>
                   </div>
                 </td>
-                <td style={TD}><Pill p={p} /></td>
+                <td style={TD}><StatusBadge p={p} /></td>
               </tr>
             );
           })}
-          <tr style={{ background: B.purple }}>
-            <td style={{ ...TD, color: B.white, fontWeight: 800, fontSize: 14 }}>TOTALS</td>
-            <td style={{ ...TD, ...TC, color: "#e9d5ff", fontWeight: 700, background: "rgba(255,255,255,.1)", borderLeft: "2px solid rgba(255,255,255,.15)", fontFamily: "'DM Mono', monospace" }}>{c1T}</td>
-            <td style={{ ...TD, ...TC, color: "#e9d5ff", fontWeight: 800, fontSize: 17, background: "rgba(255,255,255,.1)", fontFamily: "'DM Mono', monospace" }}>{c1A}</td>
-            <td style={{ ...TD, ...TC, color: "#fde68a", fontWeight: 700, background: "rgba(255,255,255,.08)", borderLeft: "2px solid rgba(255,255,255,.15)", fontFamily: "'DM Mono', monospace" }}>{c2T}</td>
-            <td style={{ ...TD, ...TC, color: "#fde68a", fontWeight: 800, fontSize: 17, background: "rgba(255,255,255,.08)", fontFamily: "'DM Mono', monospace" }}>{c2A}</td>
-            <td style={{ ...TD, ...TC, color: B.white, fontWeight: 700, borderLeft: "2px solid rgba(255,255,255,.15)", fontFamily: "'DM Mono', monospace" }}>{c1T + c2T}</td>
-            <td style={{ ...TD, ...TC, color: B.white, fontWeight: 800, fontSize: 19, fontFamily: "'DM Mono', monospace" }}>{c1A + c2A}</td>
-            <td style={{ ...TD }} colSpan={2}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ flex: 1, background: "rgba(255,255,255,.2)", borderRadius: 99, height: 8, overflow: "hidden" }}>
-                  <div style={{ width: `${pct(c1A + c2A, c1T + c2T) ?? 0}%`, height: "100%", background: B.white, borderRadius: 99, transition: "width .4s" }} />
+          {/* Totals */}
+          <tr style={{ background: T.purple }}>
+            <td style={{ ...TD, color: T.white, fontWeight: 700, fontSize: 13 }}>TOTALS</td>
+            <td style={{ ...TD, ...TC, color: "#DDD6FE", fontWeight: 700, background: "rgba(255,255,255,.08)", borderLeft: "2px solid rgba(255,255,255,.15)", fontFamily: "ui-monospace, monospace" }}>{c1T}</td>
+            <td style={{ ...TD, ...TC, color: "#DDD6FE", fontWeight: 800, fontSize: 16, background: "rgba(255,255,255,.08)", fontFamily: "ui-monospace, monospace" }}>{c1A}</td>
+            <td style={{ ...TD, ...TC, color: "#FDE68A", fontWeight: 700, background: "rgba(255,255,255,.06)", borderLeft: "2px solid rgba(255,255,255,.12)", fontFamily: "ui-monospace, monospace" }}>{c2T}</td>
+            <td style={{ ...TD, ...TC, color: "#FDE68A", fontWeight: 800, fontSize: 16, background: "rgba(255,255,255,.06)", fontFamily: "ui-monospace, monospace" }}>{c2A}</td>
+            <td style={{ ...TD, ...TC, color: T.white, fontWeight: 700, borderLeft: "1.5px solid rgba(255,255,255,.15)", fontFamily: "ui-monospace, monospace" }}>{c1T + c2T}</td>
+            <td style={{ ...TD, ...TC, color: T.white, fontWeight: 800, fontSize: 18, fontFamily: "ui-monospace, monospace" }}>{c1A + c2A}</td>
+            <td colSpan={2} style={TD}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ flex: 1, background: "rgba(255,255,255,.2)", borderRadius: 99, height: 6, overflow: "hidden" }}>
+                  <div style={{ width: `${pct(c1A + c2A, c1T + c2T) ?? 0}%`, height: "100%", background: T.white, borderRadius: 99, transition: "width .4s" }} />
                 </div>
-                <span style={{ color: "rgba(255,255,255,.85)", fontSize: 13, fontFamily: "'DM Mono', monospace", width: 38, textAlign: "right" }}>{pct(c1A + c2A, c1T + c2T) ?? 0}%</span>
+                <span style={{ color: "rgba(255,255,255,.8)", fontSize: 12, fontFamily: "ui-monospace, monospace", width: 36, textAlign: "right" }}>{pct(c1A + c2A, c1T + c2T) ?? 0}%</span>
               </div>
             </td>
           </tr>
@@ -309,12 +281,12 @@ function UniCoreTable({ uni, actuals, onSetActuals, targets, onSetTargets, edita
   );
 }
 
-// ── OTHER COURSES TABLE (generic) ─────────────────────────────────────────────
-function OtherTable({ courseList, otherAct, onSetOtherAct, c1key, c2key, editable }) {
-  const c1 = CAM[c1key], c2 = CAM[c2key];
-  const set  = (key, side, val) => onSetOtherAct(p => ({ ...p, [key]: { ...p[key], [side]: val } }));
-  const tot1 = courseList.reduce((s, c) => s + n(otherAct[c]?.[c1key]), 0);
-  const tot2 = courseList.reduce((s, c) => s + n(otherAct[c]?.[c2key]), 0);
+// ── OTHER COURSES TABLE ───────────────────────────────────────────────────────
+function OtherTable({ list, actuals, onSet, c1k, c2k, editable }) {
+  const c1 = CAM[c1k], c2 = CAM[c2k];
+  const set  = (key, s, v) => onSet(p => ({ ...p, [key]: { ...p[key], [s]: v } }));
+  const tot1 = list.reduce((s, c) => s + ni(actuals[c]?.[c1k]), 0);
+  const tot2 = list.reduce((s, c) => s + ni(actuals[c]?.[c2k]), 0);
   return (
     <div style={{ overflowX: "auto" }}>
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -323,30 +295,33 @@ function OtherTable({ courseList, otherAct, onSetOtherAct, c1key, c2key, editabl
             <th style={TH}>Course</th>
             <th style={{ ...TH, ...TC, background: c1.bg, borderLeft: `2px solid ${c1.sep}` }}>{c1.label}</th>
             <th style={{ ...TH, ...TC, background: c2.bg, borderLeft: `2px solid ${c2.sep}` }}>{c2.label}</th>
-            <th style={{ ...TH, ...TC, borderLeft: `2px solid ${B.border}` }}>Total</th>
+            <th style={{ ...TH, ...TC, borderLeft: `1.5px solid ${T.border}` }}>Total</th>
           </tr>
         </thead>
         <tbody>
-          {courseList.map((c, i) => {
-            const v1 = n(otherAct[c]?.[c1key]), v2 = n(otherAct[c]?.[c2key]);
+          {list.map((c, i) => {
+            const v1 = ni(actuals[c]?.[c1k]), v2 = ni(actuals[c]?.[c2k]);
             return (
-              <tr key={c} style={{ background: i % 2 ? B.silverLight : B.white }}>
-                <td style={{ ...TD, fontWeight: 600, color: B.ink }}>{c}</td>
+              <tr key={c} style={{ background: i % 2 ? T.bg : T.white }}
+                onMouseEnter={e => e.currentTarget.style.background = "#F0EAFF"}
+                onMouseLeave={e => e.currentTarget.style.background = i % 2 ? T.bg : T.white}
+              >
+                <td style={{ ...TD, fontWeight: 500, color: T.ink }}>{c}</td>
                 <td style={{ ...TD, ...TC, background: c1.bg, borderLeft: `2px solid ${c1.sep}` }}>
-                  <NumInput value={otherAct[c]?.[c1key] || ""} accent={c1.col} onChange={v => set(c, c1key, v)} readOnly={!editable} />
+                  <Num value={actuals[c]?.[c1k] || ""} accent={c1.col} onChange={v => set(c, c1k, v)} readOnly={!editable} />
                 </td>
                 <td style={{ ...TD, ...TC, background: c2.bg, borderLeft: `2px solid ${c2.sep}` }}>
-                  <NumInput value={otherAct[c]?.[c2key] || ""} accent={c2.col} onChange={v => set(c, c2key, v)} readOnly={!editable} />
+                  <Num value={actuals[c]?.[c2k] || ""} accent={c2.col} onChange={v => set(c, c2k, v)} readOnly={!editable} />
                 </td>
-                <td style={{ ...TD, ...TC, fontWeight: 800, fontSize: 16, color: v1 + v2 > 0 ? B.ink : B.border, borderLeft: `2px solid ${B.border}`, fontFamily: "'DM Mono', monospace" }}>{v1 + v2 || "—"}</td>
+                <td style={{ ...TD, ...TC, fontWeight: 700, fontSize: 15, color: v1 + v2 > 0 ? T.ink : T.border, borderLeft: `1.5px solid ${T.border}`, fontFamily: "ui-monospace, monospace" }}>{v1 + v2 || "—"}</td>
               </tr>
             );
           })}
-          <tr style={{ background: B.purple }}>
-            <td style={{ ...TD, color: B.white, fontWeight: 800 }}>TOTALS</td>
-            <td style={{ ...TD, ...TC, color: "#e9d5ff", fontWeight: 800, fontSize: 17, background: "rgba(255,255,255,.1)", borderLeft: "2px solid rgba(255,255,255,.15)", fontFamily: "'DM Mono', monospace" }}>{tot1}</td>
-            <td style={{ ...TD, ...TC, color: "#fde68a", fontWeight: 800, fontSize: 17, background: "rgba(255,255,255,.08)", borderLeft: "2px solid rgba(255,255,255,.15)", fontFamily: "'DM Mono', monospace" }}>{tot2}</td>
-            <td style={{ ...TD, ...TC, color: B.white, fontWeight: 800, fontSize: 19, borderLeft: "2px solid rgba(255,255,255,.15)", fontFamily: "'DM Mono', monospace" }}>{tot1 + tot2}</td>
+          <tr style={{ background: T.purple }}>
+            <td style={{ ...TD, color: T.white, fontWeight: 700 }}>TOTALS</td>
+            <td style={{ ...TD, ...TC, color: "#DDD6FE", fontWeight: 800, fontSize: 16, background: "rgba(255,255,255,.08)", borderLeft: "2px solid rgba(255,255,255,.15)", fontFamily: "ui-monospace, monospace" }}>{tot1}</td>
+            <td style={{ ...TD, ...TC, color: "#FDE68A", fontWeight: 800, fontSize: 16, background: "rgba(255,255,255,.06)", borderLeft: "2px solid rgba(255,255,255,.12)", fontFamily: "ui-monospace, monospace" }}>{tot2}</td>
+            <td style={{ ...TD, ...TC, color: T.white, fontWeight: 800, fontSize: 18, borderLeft: "1.5px solid rgba(255,255,255,.15)", fontFamily: "ui-monospace, monospace" }}>{tot1 + tot2}</td>
           </tr>
         </tbody>
       </table>
@@ -356,275 +331,319 @@ function OtherTable({ courseList, otherAct, onSetOtherAct, c1key, c2key, editabl
 
 // ── PASSCODE MODAL ────────────────────────────────────────────────────────────
 function PasscodeModal({ onSuccess, onClose }) {
-  const [value, setValue] = useState(""), [error, setError] = useState(false), [shake, setShake] = useState(false);
-  const submit = () => {
-    if (value === PASSCODE) { onSuccess(); }
-    else { setError(true); setShake(true); setTimeout(() => setShake(false), 400); setValue(""); }
+  const [val, setVal] = useState(""), [err, setErr] = useState(false), [shake, setShake] = useState(false);
+  const go = () => {
+    if (val === PASSCODE) { onSuccess(); }
+    else { setErr(true); setShake(true); setTimeout(() => setShake(false), 380); setVal(""); }
   };
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(26,20,40,.65)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ background: B.white, borderRadius: 20, padding: "40px 44px", width: 390, boxShadow: "0 32px 80px rgba(123,47,255,.25)", transform: shake ? "translateX(-6px)" : "none", transition: "transform .07s" }}>
-        <div style={{ width: 52, height: 52, borderRadius: 14, background: B.purple, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px", fontSize: 24 }}>🔒</div>
-        <h2 style={{ margin: "0 0 8px", textAlign: "center", fontSize: 21, fontWeight: 800, color: B.ink }}>Editor Access</h2>
-        <p style={{ margin: "0 0 28px", textAlign: "center", fontSize: 13, color: B.inkMid, lineHeight: 1.5 }}>Enter your passcode to unlock editing.</p>
-        <input type="password" autoFocus value={value}
-          onChange={e => { setValue(e.target.value); setError(false); }}
-          onKeyDown={e => e.key === "Enter" && submit()} placeholder="Passcode"
-          style={{ width: "100%", padding: "13px 16px", fontSize: 16, border: `2px solid ${error ? B.red : B.border}`, borderRadius: 10, outline: "none", fontFamily: "'DM Sans', sans-serif", marginBottom: error ? 8 : 16, color: B.ink }}
+    <div style={{ position: "fixed", inset: 0, background: "rgba(22,17,43,.6)", backdropFilter: "blur(10px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999 }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ background: T.white, borderRadius: 18, padding: "36px 40px", width: 370, boxShadow: "0 24px 64px rgba(108,39,232,.2)", transform: shake ? "translateX(-5px)" : "none", transition: "transform .06s" }}>
+        <div style={{ width: 48, height: 48, borderRadius: 12, background: T.purple, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 22 }}>🔒</div>
+        <h2 style={{ margin: "0 0 6px", textAlign: "center", fontSize: 20, fontWeight: 800, color: T.ink }}>Editor Access</h2>
+        <p style={{ margin: "0 0 24px", textAlign: "center", fontSize: 13, color: T.inkL }}>Enter your passcode to enable editing.</p>
+        <input type="password" autoFocus value={val}
+          onChange={e => { setVal(e.target.value); setErr(false); }}
+          onKeyDown={e => e.key === "Enter" && go()} placeholder="Passcode"
+          style={{ width: "100%", padding: "12px 14px", fontSize: 15, border: `2px solid ${err ? T.red : T.border}`, borderRadius: 10, outline: "none", fontFamily: "inherit", marginBottom: err ? 8 : 14, color: T.ink, boxSizing: "border-box" }}
         />
-        {error && <p style={{ color: B.red, fontSize: 12, margin: "0 0 16px", fontWeight: 500 }}>Incorrect passcode — please try again.</p>}
-        <button onClick={submit} style={{ width: "100%", padding: "13px", background: B.purple, color: B.white, border: "none", borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
-          onMouseEnter={e => e.currentTarget.style.background = B.purpleDark}
-          onMouseLeave={e => e.currentTarget.style.background = B.purple}
+        {err && <p style={{ color: T.red, fontSize: 12, margin: "0 0 14px", fontWeight: 500 }}>Incorrect — please try again.</p>}
+        <button onClick={go} style={{ width: "100%", padding: "12px", background: T.purple, color: T.white, border: "none", borderRadius: 9, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+          onMouseEnter={e => e.currentTarget.style.background = "#5720C8"}
+          onMouseLeave={e => e.currentTarget.style.background = T.purple}
         >Unlock Editing</button>
-        <button onClick={onClose} style={{ width: "100%", marginTop: 10, padding: "10px", background: "transparent", color: B.inkLight, border: "none", fontSize: 13, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>Cancel</button>
+        <button onClick={onClose} style={{ width: "100%", marginTop: 8, padding: "9px", background: "transparent", color: T.inkL, border: "none", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
       </div>
     </div>
   );
 }
 
+// ── INTAKE BADGE ──────────────────────────────────────────────────────────────
+function IntakeToggle({ value, onChange }) {
+  const opts = [{ id: "sep26", label: "Sep 2026" }, { id: "jan27", label: "Jan 2027" }];
+  return (
+    <div style={{ display: "inline-flex", background: T.bg, borderRadius: 8, padding: 3, border: `1px solid ${T.border}` }}>
+      {opts.map(o => (
+        <button key={o.id} onClick={() => onChange(o.id)} style={{ padding: "6px 16px", border: "none", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", background: value === o.id ? T.white : "transparent", color: value === o.id ? T.amber : T.inkL, boxShadow: value === o.id ? "0 1px 3px rgba(0,0,0,.1)" : "none", transition: "all .15s" }}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ── APP ───────────────────────────────────────────────────────────────────────
-const SUN = UNI.sunderland;
-const YSJ = UNI.ysj;
-
 export default function App() {
-  const [sunActuals,  setSunActuals]  = useState(() => blankActuals(SUN.courses, "lon", "sun"));
-  const [sunTargets,  setSunTargets]  = useState(() => buildDefaultTargets(SUN.courses, "lon", "sun"));
-  const [sunOther,    setSunOther]    = useState(() => blankOther(SUN.otherCourses));
-  const [ysjActuals,  setYsjActuals]  = useState(() => blankActuals(YSJ.courses, "lon", "york"));
-  const [ysjTargets,  setYsjTargets]  = useState(() => buildDefaultTargets(YSJ.courses, "lon", "york"));
-  const [ysjOther,    setYsjOther]    = useState(() => blankOther(YSJ.otherCourses));
-  const [uni,         setUni]         = useState("sunderland");
-  const [subTab,      setSubTab]      = useState("core");
-  const [editable,    setEditable]    = useState(false);
-  const [showModal,   setShowModal]   = useState(false);
-  const [loading,     setLoading]     = useState(true);
-  const [saving,      setSaving]      = useState(false);
-  const [updatedAt,   setUpdatedAt]   = useState(null);
-  const [logoData,    setLogoData]    = useState(null);
+  // Sunderland
+  const [sunA, setSunA] = useState(() => blankA(SUN_COURSES, "lon", "sun"));
+  const [sunT, setSunT] = useState(() => buildT(SUN_COURSES, "lon", "sun"));
+  const [sunO, setSunO] = useState(() => blankO(SUN_OTHER, "lon", "sun"));
+  // YSJ Sep 2026
+  const [ysjA_s, setYsjA_s] = useState(() => blankA(YSJ_COURSES, "lon", "york"));
+  const [ysjT_s, setYsjT_s] = useState(() => buildT(YSJ_COURSES, "lon", "york"));
+  const [ysjO_s, setYsjO_s] = useState(() => blankO(YSJ_OTHER, "lon", "york"));
+  // YSJ Jan 2027
+  const [ysjA_j, setYsjA_j] = useState(() => blankA(YSJ_COURSES, "lon", "york"));
+  const [ysjT_j, setYsjT_j] = useState(() => blankA(YSJ_COURSES, "lon", "york")); // targets blank until set
+  const [ysjO_j, setYsjO_j] = useState(() => blankO(YSJ_OTHER, "lon", "york"));
+  // UI
+  const [activeUni,    setActiveUni]    = useState("sun");
+  const [ysjIntake,    setYsjIntake]    = useState("sep26");
+  const [subTab,       setSubTab]       = useState("core");
+  const [editable,     setEditable]     = useState(false);
+  const [showModal,    setShowModal]    = useState(false);
+  const [loading,      setLoading]      = useState(true);
+  const [saving,       setSaving]       = useState(false);
+  const [updatedAt,    setUpdatedAt]    = useState(null);
+  const [logo,         setLogo]         = useState(null);
 
-  const refs      = useRef({});
-  refs.current    = { sunActuals, sunTargets, sunOther, ysjActuals, ysjTargets, ysjOther, logoData };
-  const saveTimer = useRef(null);
-  const editRef   = useRef(editable);
+  const refs    = useRef({});
+  refs.current  = { sunA, sunT, sunO, ysjA_s, ysjT_s, ysjO_s, ysjA_j, ysjT_j, ysjO_j, logo };
+  const timer   = useRef(null);
+  const editRef = useRef(editable);
   useEffect(() => { editRef.current = editable; }, [editable]);
 
-  // ── Load & realtime ─────────────────────────────────────────────────────────
+  const fmtDate = (d) => new Date(d).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+
+  // ── Load & subscribe ─────────────────────────────────────────────────────────
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase.from("tracker_data").select("*").eq("id", 1).single();
       if (data) {
-        if (data.actuals)                                       setSunActuals(data.actuals);
-        if (data.targets && Object.keys(data.targets).length)  setSunTargets(data.targets);
-        if (data.other_actuals)                                setSunOther(data.other_actuals);
-        if (data.ysj_actuals && Object.keys(data.ysj_actuals).length) setYsjActuals(data.ysj_actuals);
-        if (data.ysj_targets && Object.keys(data.ysj_targets).length) setYsjTargets(data.ysj_targets);
-        if (data.ysj_other_actuals)                            setYsjOther(data.ysj_other_actuals);
-        if (data.logo_data)                                    setLogoData(data.logo_data);
-        if (data.updated_at) setUpdatedAt(new Date(data.updated_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }));
+        const s = (fn, v) => v && Object.keys(v).length && fn(v);
+        s(setSunA,   data.actuals);
+        s(setSunT,   data.targets);
+        s(setSunO,   data.other_actuals);
+        s(setYsjA_s, data.ysj_actuals);
+        s(setYsjT_s, data.ysj_targets);
+        s(setYsjO_s, data.ysj_other_actuals);
+        s(setYsjA_j, data.ysj_actuals_jan27);
+        s(setYsjT_j, data.ysj_targets_jan27);
+        s(setYsjO_j, data.ysj_other_actuals_jan27);
+        if (data.logo_data) setLogo(data.logo_data);
+        if (data.updated_at) setUpdatedAt(fmtDate(data.updated_at));
       }
       setLoading(false);
     };
     load();
-    const ch = supabase.channel("tracker_rt")
+    const ch = supabase.channel("rt")
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "tracker_data" }, ({ new: row }) => {
         if (editRef.current) return;
-        if (row.actuals)                                       setSunActuals(row.actuals);
-        if (row.targets && Object.keys(row.targets).length)   setSunTargets(row.targets);
-        if (row.other_actuals)                                 setSunOther(row.other_actuals);
-        if (row.ysj_actuals && Object.keys(row.ysj_actuals).length) setYsjActuals(row.ysj_actuals);
-        if (row.ysj_targets && Object.keys(row.ysj_targets).length) setYsjTargets(row.ysj_targets);
-        if (row.ysj_other_actuals)                             setYsjOther(row.ysj_other_actuals);
-        if (row.logo_data)                                     setLogoData(row.logo_data);
-        if (row.updated_at) setUpdatedAt(new Date(row.updated_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }));
+        const s = (fn, v) => v && Object.keys(v).length && fn(v);
+        s(setSunA,   row.actuals);       s(setSunT,   row.targets);
+        s(setSunO,   row.other_actuals); s(setYsjA_s, row.ysj_actuals);
+        s(setYsjT_s, row.ysj_targets);  s(setYsjO_s, row.ysj_other_actuals);
+        s(setYsjA_j, row.ysj_actuals_jan27); s(setYsjT_j, row.ysj_targets_jan27);
+        s(setYsjO_j, row.ysj_other_actuals_jan27);
+        if (row.logo_data) setLogo(row.logo_data);
+        if (row.updated_at) setUpdatedAt(fmtDate(row.updated_at));
       }).subscribe();
     return () => supabase.removeChannel(ch);
   }, []);
 
-  // ── Debounced save ───────────────────────────────────────────────────────────
-  const scheduleSave = useCallback(() => {
-    clearTimeout(saveTimer.current);
+  // ── Save ──────────────────────────────────────────────────────────────────────
+  const save = useCallback(() => {
+    clearTimeout(timer.current);
     setSaving(true);
-    saveTimer.current = setTimeout(async () => {
-      const now = new Date().toISOString();
-      const r = refs.current;
+    timer.current = setTimeout(async () => {
+      const now = new Date().toISOString(), r = refs.current;
       await supabase.from("tracker_data").update({
-        actuals: r.sunActuals, targets: r.sunTargets, other_actuals: r.sunOther,
-        ysj_actuals: r.ysjActuals, ysj_targets: r.ysjTargets, ysj_other_actuals: r.ysjOther,
-        logo_data: r.logoData, updated_at: now,
+        actuals: r.sunA, targets: r.sunT, other_actuals: r.sunO,
+        ysj_actuals: r.ysjA_s, ysj_targets: r.ysjT_s, ysj_other_actuals: r.ysjO_s,
+        ysj_actuals_jan27: r.ysjA_j, ysj_targets_jan27: r.ysjT_j, ysj_other_actuals_jan27: r.ysjO_j,
+        logo_data: r.logo, updated_at: now,
       }).eq("id", 1);
       setSaving(false);
-      setUpdatedAt(new Date(now).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }));
-    }, 800);
+      setUpdatedAt(fmtDate(now));
+    }, 700);
   }, []);
 
-  const mkHandler = (setter) => useCallback((u) => {
-    setter(p => { const x = typeof u === "function" ? u(p) : u; if (editRef.current) scheduleSave(); return x; });
-  }, [scheduleSave]);
+  const wrap = (setter) => useCallback((u) => {
+    setter(p => { const x = typeof u === "function" ? u(p) : u; if (editRef.current) save(); return x; });
+  }, [save]);
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const hSunA  = useCallback(u => { setSunActuals(p => { const x = typeof u==="function"?u(p):u; if(editRef.current) scheduleSave(); return x; }); }, [scheduleSave]);
+  const hSunA   = useCallback(u => { setSunA(p   => { const x=typeof u==="function"?u(p):u; if(editRef.current)save(); return x; }); }, [save]);
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const hSunT  = useCallback(u => { setSunTargets(p => { const x = typeof u==="function"?u(p):u; if(editRef.current) scheduleSave(); return x; }); }, [scheduleSave]);
+  const hSunT   = useCallback(u => { setSunT(p   => { const x=typeof u==="function"?u(p):u; if(editRef.current)save(); return x; }); }, [save]);
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const hSunO  = useCallback(u => { setSunOther(p  => { const x = typeof u==="function"?u(p):u; if(editRef.current) scheduleSave(); return x; }); }, [scheduleSave]);
+  const hSunO   = useCallback(u => { setSunO(p   => { const x=typeof u==="function"?u(p):u; if(editRef.current)save(); return x; }); }, [save]);
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const hYsjA  = useCallback(u => { setYsjActuals(p=> { const x = typeof u==="function"?u(p):u; if(editRef.current) scheduleSave(); return x; }); }, [scheduleSave]);
+  const hYsjAs  = useCallback(u => { setYsjA_s(p => { const x=typeof u==="function"?u(p):u; if(editRef.current)save(); return x; }); }, [save]);
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const hYsjT  = useCallback(u => { setYsjTargets(p=> { const x = typeof u==="function"?u(p):u; if(editRef.current) scheduleSave(); return x; }); }, [scheduleSave]);
+  const hYsjTs  = useCallback(u => { setYsjT_s(p => { const x=typeof u==="function"?u(p):u; if(editRef.current)save(); return x; }); }, [save]);
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const hYsjO  = useCallback(u => { setYsjOther(p  => { const x = typeof u==="function"?u(p):u; if(editRef.current) scheduleSave(); return x; }); }, [scheduleSave]);
+  const hYsjOs  = useCallback(u => { setYsjO_s(p => { const x=typeof u==="function"?u(p):u; if(editRef.current)save(); return x; }); }, [save]);
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const hYsjAj  = useCallback(u => { setYsjA_j(p => { const x=typeof u==="function"?u(p):u; if(editRef.current)save(); return x; }); }, [save]);
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const hYsjTj  = useCallback(u => { setYsjT_j(p => { const x=typeof u==="function"?u(p):u; if(editRef.current)save(); return x; }); }, [save]);
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const hYsjOj  = useCallback(u => { setYsjO_j(p => { const x=typeof u==="function"?u(p):u; if(editRef.current)save(); return x; }); }, [save]);
 
-  // ── Logo upload ──────────────────────────────────────────────────────────────
-  const handleLogoUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => { setLogoData(reader.result); if (editRef.current) scheduleSave(); };
-    reader.readAsDataURL(file);
+  const handleLogo = (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => { setLogo(r.result); if (editRef.current) save(); };
+    r.readAsDataURL(f);
   };
 
-  // ── Totals ───────────────────────────────────────────────────────────────────
-  const sunTot = SUN.courses.reduce((s, c) => s + n(sunActuals[c.name]?.lon) + n(sunActuals[c.name]?.sun), 0);
-  const sunTgt = SUN.courses.reduce((s, c) => s + n(sunTargets[c.name]?.lon) + n(sunTargets[c.name]?.sun), 0);
-  const ysjTot = YSJ.courses.reduce((s, c) => s + n(ysjActuals[c.name]?.lon) + n(ysjActuals[c.name]?.york), 0);
-  const ysjTgt = YSJ.courses.reduce((s, c) => s + n(ysjTargets[c.name]?.lon) + n(ysjTargets[c.name]?.york), 0);
-  const sunOtherTot = SUN.otherCourses.reduce((s, c) => s + n(sunOther[c]?.lon) + n(sunOther[c]?.sun), 0);
-  const ysjOtherTot = YSJ.otherCourses.reduce((s, c) => s + n(ysjOther[c]?.lon) + n(ysjOther[c]?.york), 0);
+  // ── Totals ────────────────────────────────────────────────────────────────────
+  const sunTot  = SUN_COURSES.reduce((s, c) => s + ni(sunA[c.name]?.lon)  + ni(sunA[c.name]?.sun),  0);
+  const sunTgt  = SUN_COURSES.reduce((s, c) => s + ni(sunT[c.name]?.lon)  + ni(sunT[c.name]?.sun),  0);
+  const ysjsTot = YSJ_COURSES.reduce((s, c) => s + ni(ysjA_s[c.name]?.lon) + ni(ysjA_s[c.name]?.york), 0);
+  const ysjsTgt = YSJ_COURSES.reduce((s, c) => s + ni(ysjT_s[c.name]?.lon) + ni(ysjT_s[c.name]?.york), 0);
+  const ysjjTot = YSJ_COURSES.reduce((s, c) => s + ni(ysjA_j[c.name]?.lon) + ni(ysjA_j[c.name]?.york), 0);
+  const ysjjTgt = YSJ_COURSES.reduce((s, c) => s + ni(ysjT_j[c.name]?.lon) + ni(ysjT_j[c.name]?.york), 0);
+  const ysjTot  = ysjIntake === "sep26" ? ysjsTot : ysjjTot;
+  const ysjTgt  = ysjIntake === "sep26" ? ysjsTgt : ysjjTgt;
+  const grandTot = sunTot + ysjsTot + ysjjTot;
+  const grandTgt = sunTgt + ysjsTgt + ysjjTgt;
 
-  const uniBtn = (id, label, color) => (
-    <button onClick={() => { setUni(id); setSubTab("core"); }} style={{ padding: "12px 28px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "'DM Sans', sans-serif", borderRadius: "10px 10px 0 0", background: uni === id ? B.white : "transparent", color: uni === id ? color : B.inkMid, borderBottom: uni === id ? `3px solid ${color}` : "3px solid transparent", transition: "all .15s" }}>
+  // Current YSJ handlers
+  const ysjActuals  = ysjIntake === "sep26" ? ysjA_s : ysjA_j;
+  const ysjTargets  = ysjIntake === "sep26" ? ysjT_s : ysjT_j;
+  const ysjOther    = ysjIntake === "sep26" ? ysjO_s : ysjO_j;
+  const hYsjA       = ysjIntake === "sep26" ? hYsjAs : hYsjAj;
+  const hYsjT       = ysjIntake === "sep26" ? hYsjTs : hYsjTj;
+  const hYsjO       = ysjIntake === "sep26" ? hYsjOs : hYsjOj;
+
+  const uniTab = (id, label, accent, active) => (
+    <button onClick={() => { setActiveUni(id); setSubTab("core"); }}
+      style={{ padding: "14px 28px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "inherit", background: active ? T.white : "transparent", color: active ? accent : T.inkL, borderBottom: active ? `3px solid ${accent}` : "3px solid transparent", transition: "all .15s", borderRadius: "10px 10px 0 0", letterSpacing: ".01em" }}>
       {label}
     </button>
   );
+
   const subBtn = (id, label) => (
-    <button onClick={() => setSubTab(id)} style={{ padding: "8px 18px", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: "'DM Sans', sans-serif", borderRadius: 6, background: subTab === id ? B.purpleLight : "transparent", color: subTab === id ? B.purple : B.inkMid, transition: "all .15s" }}>
+    <button onClick={() => setSubTab(id)}
+      style={{ padding: "7px 16px", border: `1px solid ${subTab === id ? T.purple : T.border}`, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: "inherit", background: subTab === id ? T.purpleL : T.white, color: subTab === id ? T.purple : T.inkL, borderRadius: 7, transition: "all .15s" }}>
       {label}
     </button>
   );
 
   if (loading) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: B.silverLight, flexDirection: "column", gap: 16 }}>
-      <div style={{ width: 56, height: 56, borderRadius: 16, background: B.purple, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>📊</div>
-      <div style={{ fontSize: 16, color: B.inkMid, fontWeight: 600 }}>Loading tracker…</div>
+    <div style={{ minHeight: "100vh", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 14 }}>
+      <div style={{ width: 52, height: 52, borderRadius: 14, background: T.purple, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>📊</div>
+      <p style={{ margin: 0, fontSize: 15, color: T.inkM, fontWeight: 600 }}>Loading…</p>
     </div>
   );
 
   return (
     <>
       {showModal && <PasscodeModal onSuccess={() => { setEditable(true); setShowModal(false); }} onClose={() => setShowModal(false)} />}
-      <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: B.silverLight, minHeight: "100vh" }}>
 
-        {/* HEADER */}
-        <div style={{ background: B.purple, padding: "0 36px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", padding: "20px 0 0" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ position: "relative" }}>
-                {logoData
-                  ? <img src={logoData} alt="Study Now" style={{ height: 44, width: 44, borderRadius: 10, objectFit: "contain", background: "rgba(255,255,255,.15)" }} />
-                  : <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(255,255,255,.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <span style={{ fontWeight: 900, fontSize: 14, color: B.silver, fontFamily: "'DM Sans', sans-serif" }}>SN</span>
-                    </div>
-                }
-                {editable && (
-                  <label title="Upload logo" style={{ position: "absolute", inset: 0, cursor: "pointer", borderRadius: 12, background: "rgba(0,0,0,.4)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity .15s" }}
-                    onMouseEnter={e => e.currentTarget.style.opacity = 1}
-                    onMouseLeave={e => e.currentTarget.style.opacity = 0}
-                  >
-                    <span style={{ fontSize: 18 }}>📷</span>
-                    <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: "none" }} />
-                  </label>
-                )}
-              </div>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: ".1em", textTransform: "uppercase", color: "rgba(255,255,255,.55)", marginBottom: 3 }}>Study Now · Partner Universities</div>
-                <div style={{ fontSize: 23, fontWeight: 800, color: B.white, letterSpacing: "-.02em" }}>Deposit Tracker</div>
-              </div>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-              {saving ? <span style={{ fontSize: 11, color: "rgba(255,255,255,.65)", fontStyle: "italic" }}>💾 Saving…</span>
-                      : updatedAt && <span style={{ fontSize: 11, color: "rgba(255,255,255,.55)", fontStyle: "italic" }}>Updated {updatedAt}</span>}
-              {editable
-                ? <button onClick={() => setEditable(false)} style={{ background: B.green, border: "none", color: B.white, padding: "9px 18px", borderRadius: 9, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>🔓 Editing — Lock</button>
-                : <button onClick={() => setShowModal(true)} style={{ background: "rgba(255,255,255,.15)", border: "1px solid rgba(255,255,255,.3)", color: B.white, padding: "9px 18px", borderRadius: 9, cursor: "pointer", fontWeight: 600, fontSize: 13, fontFamily: "'DM Sans', sans-serif", transition: "background .15s" }}
-                    onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.25)"}
-                    onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,.15)"}
-                  >🔒 Edit</button>
+      <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: T.bg, minHeight: "100vh" }}>
+
+        {/* ── HEADER ── */}
+        <div style={{ background: T.purple, padding: "18px 40px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            {/* Logo */}
+            <div style={{ position: "relative", flexShrink: 0 }}>
+              {logo
+                ? <img src={logo} alt="Study Now" style={{ width: 40, height: 40, borderRadius: 10, objectFit: "contain", background: "rgba(255,255,255,.12)" }} />
+                : <div style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(255,255,255,.14)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ fontSize: 13, fontWeight: 900, color: "rgba(255,255,255,.7)" }}>SN</span>
+                  </div>
               }
+              {editable && (
+                <label style={{ position: "absolute", inset: 0, cursor: "pointer", borderRadius: 10, background: "rgba(0,0,0,.45)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity .15s" }}
+                  onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                  onMouseLeave={e => e.currentTarget.style.opacity = 0}
+                  title="Upload logo"
+                >
+                  <span style={{ fontSize: 16 }}>📷</span>
+                  <input type="file" accept="image/*" onChange={handleLogo} style={{ display: "none" }} />
+                </label>
+              )}
+            </div>
+            <div>
+              <p style={{ margin: "0 0 2px", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,.5)", letterSpacing: ".1em", textTransform: "uppercase" }}>Study Now</p>
+              <p style={{ margin: 0, fontSize: 20, fontWeight: 800, color: T.white, letterSpacing: "-.02em" }}>Deposit Tracker</p>
             </div>
           </div>
-          <div style={{ marginTop: 16 }}>
-            <span style={{ background: "rgba(255,255,255,.15)", color: "rgba(255,255,255,.8)", fontSize: 11, fontWeight: 600, padding: "4px 12px", borderRadius: "6px 6px 0 0", letterSpacing: ".04em" }}>
-              Sep 2026 & Jan 2027 Intake
-            </span>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {saving
+              ? <span style={{ fontSize: 11, color: "rgba(255,255,255,.55)", fontStyle: "italic" }}>Saving…</span>
+              : updatedAt && <span style={{ fontSize: 11, color: "rgba(255,255,255,.45)" }}>Updated {updatedAt}</span>
+            }
+            {editable
+              ? <button onClick={() => setEditable(false)} style={{ background: T.green, border: "none", color: T.white, padding: "8px 16px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: "inherit" }}>🔓 Lock</button>
+              : <button onClick={() => setShowModal(true)} style={{ background: "rgba(255,255,255,.12)", border: "1px solid rgba(255,255,255,.22)", color: T.white, padding: "8px 16px", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: "inherit", transition: "background .15s" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,.2)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,.12)"}
+                >🔒 Edit</button>
+            }
           </div>
         </div>
 
-        {/* VIEW-ONLY BANNER */}
-        {!editable && (
-          <div style={{ background: B.purpleLight, borderBottom: `1px solid ${B.purpleMid}`, padding: "8px 36px", fontSize: 12, color: B.inkMid, fontWeight: 500, display: "flex", alignItems: "center", gap: 8 }}>
-            👁️ View-only — click <strong style={{ color: B.purple, marginLeft: 3 }}>🔒 Edit</strong> and enter the passcode to update figures, targets, or upload a logo.
+        {/* ── MAIN ── */}
+        <div style={{ padding: "32px 40px" }}>
+
+          {/* STATS ROW */}
+          <div style={{ display: "flex", gap: 14, marginBottom: 36, flexWrap: "wrap" }}>
+            <StatCard label="All Deposits" value={grandTot} max={grandTgt} accent={T.purple} hero />
+            <StatCard label="Univ. of Sunderland" value={sunTot} max={sunTgt} accent={T.teal} />
+            <StatCard label={`York St John · Sep 2026`} value={ysjsTot} max={ysjsTgt} accent={T.amber} />
+            <StatCard label={`York St John · Jan 2027`} value={ysjjTot} max={ysjjTgt > 0 ? ysjjTgt : undefined} sub={ysjjTgt === 0 ? "Targets not yet set" : undefined} accent={T.amber} />
           </div>
-        )}
-
-        <div style={{ padding: "28px 36px" }}>
-
-          {/* COMBINED KPIs */}
-          <div style={{ fontSize: 11, fontWeight: 700, color: B.inkLight, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 12 }}>Overall · Study Now</div>
-          <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 28 }}>
-            <KpiCard label="Total Deposits"        value={sunTot + ysjTot} max={sunTgt + ysjTgt} color={B.purple} size="large" />
-            <KpiCard label="Univ. of Sunderland"   value={sunTot}          max={sunTgt}           color={SUN.color} />
-            <KpiCard label="York St John"           value={ysjTot}          max={ysjTgt}           color={YSJ.color} />
-            <KpiCard label="Other (Sunderland)"    value={sunOtherTot}     sub="no target set"    color={B.inkLight} />
-            <KpiCard label="Other (York St John)"  value={ysjOtherTot}     sub="no target set"    color={B.inkLight} />
-          </div>
-
-          <div style={{ height: 1, background: B.border, marginBottom: 24 }} />
 
           {/* UNIVERSITY TABS */}
-          <div style={{ borderBottom: `2px solid ${B.border}`, display: "flex", gap: 2 }}>
-            {uniBtn("sunderland", "🎓 University of Sunderland", SUN.color)}
-            {uniBtn("ysj",        "🎓 York St John University",  YSJ.color)}
+          <div style={{ borderBottom: `2px solid ${T.border}`, display: "flex", gap: 0, marginBottom: 0 }}>
+            {uniTab("sun", "University of Sunderland", T.teal,   activeUni === "sun")}
+            {uniTab("ysj", "York St John University",  T.amber,  activeUni === "ysj")}
           </div>
 
-          <div style={{ background: B.white, borderRadius: "0 12px 12px 12px", border: `1px solid ${B.border}`, borderTop: "none", boxShadow: "0 2px 12px rgba(123,47,255,.06)" }}>
-            {/* Sub-tab bar */}
-            <div style={{ padding: "12px 16px 0", borderBottom: `1px solid ${B.border}`, display: "flex", gap: 6, background: B.silverLight, borderRadius: "0 12px 0 0" }}>
-              {subBtn("core",  "Core Courses")}
-              {subBtn("other", "Other Courses")}
+          {/* CONTENT PANEL */}
+          <div style={{ background: T.white, borderRadius: "0 12px 12px 12px", border: `1px solid ${T.border}`, borderTop: "none", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
+
+            {/* Panel toolbar */}
+            <div style={{ padding: "12px 16px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: "#FAFAFA", flexWrap: "wrap", gap: 10 }}>
+              <div style={{ display: "flex", gap: 6 }}>
+                {subBtn("core", "Core Courses")}
+                {subBtn("other", "Other Courses")}
+              </div>
+              {activeUni === "ysj" && (
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontSize: 12, color: T.inkL, fontWeight: 500 }}>Intake:</span>
+                  <IntakeToggle value={ysjIntake} onChange={(v) => { setYsjIntake(v); setSubTab("core"); }} />
+                </div>
+              )}
+              {activeUni === "sun" && (
+                <span style={{ fontSize: 11, color: T.inkL, background: T.tealL, padding: "4px 10px", borderRadius: 99, fontWeight: 600 }}>Aug – Nov 2026</span>
+              )}
             </div>
 
-            {/* Sunderland */}
-            {uni === "sunderland" && subTab === "core" && (
-              <UniCoreTable uni={SUN} actuals={sunActuals} onSetActuals={hSunA} targets={sunTargets} onSetTargets={hSunT} editable={editable} />
+            {/* Table content */}
+            {activeUni === "sun" && subTab === "core" && (
+              <CourseTable courses={SUN_COURSES} actuals={sunA} onSetActuals={hSunA} targets={sunT} onSetTargets={hSunT} c1k="lon" c2k="sun" editable={editable} />
             )}
-            {uni === "sunderland" && subTab === "other" && (
-              <OtherTable courseList={SUN.otherCourses} otherAct={sunOther} onSetOtherAct={hSunO} c1key="lon" c2key="sun" editable={editable} />
+            {activeUni === "sun" && subTab === "other" && (
+              <OtherTable list={SUN_OTHER} actuals={sunO} onSet={hSunO} c1k="lon" c2k="sun" editable={editable} />
             )}
-
-            {/* York St John */}
-            {uni === "ysj" && subTab === "core" && (
-              <UniCoreTable uni={YSJ} actuals={ysjActuals} onSetActuals={hYsjA} targets={ysjTargets} onSetTargets={hYsjT} editable={editable} />
+            {activeUni === "ysj" && subTab === "core" && (
+              <CourseTable courses={YSJ_COURSES} actuals={ysjActuals} onSetActuals={hYsjA} targets={ysjTargets} onSetTargets={hYsjT} c1k="lon" c2k="york" editable={editable} />
             )}
-            {uni === "ysj" && subTab === "other" && (
-              <OtherTable courseList={YSJ.otherCourses} otherAct={ysjOther} onSetOtherAct={hYsjO} c1key="lon" c2key="york" editable={editable} />
+            {activeUni === "ysj" && subTab === "other" && (
+              <OtherTable list={YSJ_OTHER} actuals={ysjOther} onSet={hYsjO} c1k="lon" c2k="york" editable={editable} />
             )}
           </div>
 
-          <div style={{ marginTop: 18, fontSize: 11, color: B.inkLight, textAlign: "center", lineHeight: 1.7 }}>
-            Groups included: Deposits · Sept 26 Deposits · Defer/Refund/Change Uni &nbsp;·&nbsp; Closed Lost excluded
-          </div>
+          <p style={{ margin: "16px 0 0", fontSize: 11, color: T.inkL, textAlign: "center" }}>
+            Includes: Deposits · Sept 26 Deposits · Defer/Refund/Change Uni &nbsp;·&nbsp; Closed Lost excluded
+          </p>
         </div>
 
         {/* FOOTER */}
-        <div style={{ borderTop: `1px solid ${B.border}`, padding: "16px 36px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+        <div style={{ borderTop: `1px solid ${T.border}`, padding: "14px 40px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 22, height: 22, borderRadius: 6, background: B.purple, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ color: B.white, fontSize: 9, fontWeight: 900 }}>SN</span>
+            <div style={{ width: 20, height: 20, borderRadius: 5, background: T.purple, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ color: T.white, fontSize: 8, fontWeight: 900 }}>SN</span>
             </div>
-            <span style={{ fontSize: 11, color: B.inkLight, fontWeight: 500 }}>Study Now · Internal Tool</span>
+            <span style={{ fontSize: 11, color: T.inkL }}>Study Now · Internal Tool</span>
           </div>
-          <span style={{ fontSize: 11, color: B.inkLight }}>© {new Date().getFullYear()} Study Now. All rights reserved.</span>
+          <span style={{ fontSize: 11, color: T.inkL }}>© {new Date().getFullYear()} Study Now</span>
         </div>
       </div>
     </>
