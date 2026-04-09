@@ -50,8 +50,18 @@ const SUN_COURSES = [
 
 const SUN_OTHER = [
   "OSPAP", "MA Education", "MA Marketing", "BSc (Hons) Nursing",
+  "BSc (Hons) Nursing (Top Up)",
   "BSc (Hons) Nursing Practice (Top Up)", "BSc (Hons) Health and Social Care",
   "BEng Electronic & Electrical Engineering",
+  "BA (Hons) Accounting and Financial Management",
+  "BEng (Hons) Sustainable Design Engineering",
+  "LLM in International Human Rights",
+  "MSc Finance and Management",
+  "MSc Human Resource Management",
+  "MSc International Business Management",
+  "MSc International Business Management 15 Months",
+  "MSc Project Management",
+  "MSc Tourism and Hospitality",
 ];
 
 const YSJ_COURSES = [
