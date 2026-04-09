@@ -55,6 +55,7 @@ const SUN_OTHER = [
   "BEng Electronic & Electrical Engineering",
   "BA (Hons) Accounting and Financial Management",
   "BEng (Hons) Sustainable Design Engineering",
+  "BEng (Hons) Computer Systems Engineering",
   "LLM in International Human Rights",
   "MSc Finance and Management",
   "MSc Human Resource Management",
@@ -62,6 +63,7 @@ const SUN_OTHER = [
   "MSc International Business Management 15 Months",
   "MSc Project Management",
   "MSc Tourism and Hospitality",
+  "Master of Business Administration (Professional Practice) - 12 Months Placement",
 ];
 
 const YSJ_COURSES = [
