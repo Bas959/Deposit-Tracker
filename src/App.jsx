@@ -55,7 +55,7 @@ const SUN_OTHER = [
   "BEng Electronic & Electrical Engineering",
   "BA (Hons) Accounting and Financial Management",
   "BEng (Hons) Sustainable Design Engineering",
-  "BEng (Hons) Computer Systems Engineering",
+  "BSc (Hons) Computer Systems Engineering (Top-Up) Full-time",
   "LLM in International Human Rights",
   "MSc Finance and Management",
   "MSc Human Resource Management",
