@@ -365,13 +365,13 @@ function CourseTable({ courses, actuals, onSetActuals, targets, onSetTargets, c1
                   <Num value={targets[c.name]?.[c1k] ?? ""} accent={c1.col} onChange={v => setT(c.name, c1k, v)} readOnly={!editable} />
                 </td>
                 <td style={{ ...TD, ...TC, background: c1.bg }}>
-                  {lt > 0 ? <Num value={actuals[c.name]?.[c1k] || ""} accent={c1.col} onChange={v => setA(c.name, c1k, v)} readOnly={!editable} /> : <span style={{ color: T.border }}>—</span>}
+                  <Num value={actuals[c.name]?.[c1k] || ""} accent={c1.col} onChange={v => setA(c.name, c1k, v)} readOnly={!editable} />
                 </td>
                 <td style={{ ...TD, ...TC, background: c2.bg, borderLeft: `2px solid ${c2.sep}` }}>
                   <Num value={targets[c.name]?.[c2k] ?? ""} accent={c2.col} onChange={v => setT(c.name, c2k, v)} readOnly={!editable} />
                 </td>
                 <td style={{ ...TD, ...TC, background: c2.bg }}>
-                  {st > 0 ? <Num value={actuals[c.name]?.[c2k] || ""} accent={c2.col} onChange={v => setA(c.name, c2k, v)} readOnly={!editable} /> : <span style={{ color: T.border }}>—</span>}
+                  <Num value={actuals[c.name]?.[c2k] || ""} accent={c2.col} onChange={v => setA(c.name, c2k, v)} readOnly={!editable} />
                 </td>
                 <td style={{ ...TD, ...TC, fontWeight: 600, color: T.inkM, borderLeft: `1.5px solid ${T.border}`, fontFamily: "ui-monospace, monospace" }}>{tgt || "—"}</td>
                 <td style={{ ...TD, ...TC, fontWeight: 700, fontSize: 15, color: tot > 0 ? T.ink : T.border, fontFamily: "ui-monospace, monospace" }}>{tot || "—"}</td>
