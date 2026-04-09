@@ -134,9 +134,6 @@ const YSJ_OTHER = [
   "BA (Hons) Politics and International Relations (Level 6)",
   "MA Creative Writing", "MA Publishing", "MA Environment and Social Justice",
   "MA History", "MA Contemporary Literature", "MA Religion in Society",
-  "MBA with Professional Experience",
-  "International Project Management with Professional Experience",
-  "BA (Hons) Business Management with Foundation Year",
 ];
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
