@@ -365,7 +365,9 @@ function CourseTable({ courses, actuals, onSetActuals, targets, onSetTargets, c1
           {courses.map((c, i) => {
             const lt = ni(targets[c.name]?.[c1k]), st = ni(targets[c.name]?.[c2k]);
             const la = ni(actuals[c.name]?.[c1k]), sa = ni(actuals[c.name]?.[c2k]);
-            const tot = la + sa, tgt = lt + st, p = pct(tot, tgt);
+            // Only count actuals toward progress if that campus has a target set
+            const tot = (lt > 0 ? la : 0) + (st > 0 ? sa : 0);
+            const tgt = lt + st, p = pct(tot, tgt);
             const barCol = p === null ? T.inkL : p >= 100 ? T.green : p >= 70 ? T.yellow : T.red;
             return (
               <tr key={c.name} style={{ background: i % 2 ? T.bg : T.white, transition: "background .1s" }}
@@ -518,17 +520,12 @@ export default function App() {
   const [sunA, setSunA] = useState(() => blankA(SUN_COURSES, "lon", "sun"));
   const [sunT, setSunT] = useState(() => buildT(SUN_COURSES, "lon", "sun"));
   const [sunO, setSunO] = useState(() => blankO(SUN_OTHER, "lon", "sun"));
-  // YSJ Sep 2026
+  // YSJ Sep 2026 only
   const [ysjA_s, setYsjA_s] = useState(() => blankA(YSJ_COURSES, "lon", "york"));
   const [ysjT_s, setYsjT_s] = useState(() => buildT(YSJ_COURSES, "lon", "york"));
   const [ysjO_s, setYsjO_s] = useState(() => blankO(YSJ_OTHER, "lon", "york"));
-  // YSJ Jan 2027
-  const [ysjA_j, setYsjA_j] = useState(() => blankA(YSJ_COURSES, "lon", "york"));
-  const [ysjT_j, setYsjT_j] = useState(() => blankA(YSJ_COURSES, "lon", "york")); // targets blank until set
-  const [ysjO_j, setYsjO_j] = useState(() => blankO(YSJ_OTHER, "lon", "york"));
   // UI
   const [activeUni,    setActiveUni]    = useState("sun");
-  const [ysjIntake,    setYsjIntake]    = useState("sep26");
   const [subTab,       setSubTab]       = useState("core");
   const [editable,     setEditable]     = useState(false);
   const [showModal,    setShowModal]    = useState(false);
@@ -538,7 +535,7 @@ export default function App() {
   const [logo,         setLogo]         = useState(null);
 
   const refs    = useRef({});
-  refs.current  = { sunA, sunT, sunO, ysjA_s, ysjT_s, ysjO_s, ysjA_j, ysjT_j, ysjO_j, logo };
+  refs.current  = { sunA, sunT, sunO, ysjA_s, ysjT_s, ysjO_s, logo };
   const timer   = useRef(null);
   const editRef = useRef(editable);
   useEffect(() => { editRef.current = editable; }, [editable]);
@@ -557,9 +554,6 @@ export default function App() {
         s(setYsjA_s, data.ysj_actuals);
         s(setYsjT_s, data.ysj_targets);
         s(setYsjO_s, data.ysj_other_actuals);
-        s(setYsjA_j, data.ysj_actuals_jan27);
-        s(setYsjT_j, data.ysj_targets_jan27);
-        s(setYsjO_j, data.ysj_other_actuals_jan27);
         if (data.logo_data) setLogo(data.logo_data);
         if (data.updated_at) setUpdatedAt(fmtDate(data.updated_at));
       }
@@ -573,8 +567,6 @@ export default function App() {
         s(setSunA,   row.actuals);       s(setSunT,   row.targets);
         s(setSunO,   row.other_actuals); s(setYsjA_s, row.ysj_actuals);
         s(setYsjT_s, row.ysj_targets);  s(setYsjO_s, row.ysj_other_actuals);
-        s(setYsjA_j, row.ysj_actuals_jan27); s(setYsjT_j, row.ysj_targets_jan27);
-        s(setYsjO_j, row.ysj_other_actuals_jan27);
         if (row.logo_data) setLogo(row.logo_data);
         if (row.updated_at) setUpdatedAt(fmtDate(row.updated_at));
       }).subscribe();
@@ -590,7 +582,6 @@ export default function App() {
       await supabase.from("tracker_data").update({
         actuals: r.sunA, targets: r.sunT, other_actuals: r.sunO,
         ysj_actuals: r.ysjA_s, ysj_targets: r.ysjT_s, ysj_other_actuals: r.ysjO_s,
-        ysj_actuals_jan27: r.ysjA_j, ysj_targets_jan27: r.ysjT_j, ysj_other_actuals_jan27: r.ysjO_j,
         logo_data: r.logo, updated_at: now,
       }).eq("id", 1);
       setSaving(false);
@@ -614,12 +605,6 @@ export default function App() {
   const hYsjTs  = useCallback(u => { setYsjT_s(p => { const x=typeof u==="function"?u(p):u; if(editRef.current)save(); return x; }); }, [save]);
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const hYsjOs  = useCallback(u => { setYsjO_s(p => { const x=typeof u==="function"?u(p):u; if(editRef.current)save(); return x; }); }, [save]);
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const hYsjAj  = useCallback(u => { setYsjA_j(p => { const x=typeof u==="function"?u(p):u; if(editRef.current)save(); return x; }); }, [save]);
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const hYsjTj  = useCallback(u => { setYsjT_j(p => { const x=typeof u==="function"?u(p):u; if(editRef.current)save(); return x; }); }, [save]);
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const hYsjOj  = useCallback(u => { setYsjO_j(p => { const x=typeof u==="function"?u(p):u; if(editRef.current)save(); return x; }); }, [save]);
 
   const handleLogo = (e) => {
     const f = e.target.files[0]; if (!f) return;
@@ -639,23 +624,8 @@ export default function App() {
   const ysjsOtherT  = YSJ_OTHER.reduce((s, c) => s + ni(ysjO_s[c]?.lon) + ni(ysjO_s[c]?.york), 0);
   const ysjsTot     = ysjsCoreT + ysjsOtherT;
 
-  const ysjjCoreT   = YSJ_COURSES.reduce((s, c) => s + ni(ysjA_j[c.name]?.lon) + ni(ysjA_j[c.name]?.york), 0);
-  const ysjjTgt     = YSJ_COURSES.reduce((s, c) => s + ni(ysjT_j[c.name]?.lon) + ni(ysjT_j[c.name]?.york), 0);
-  const ysjjOtherT  = YSJ_OTHER.reduce((s, c) => s + ni(ysjO_j[c]?.lon) + ni(ysjO_j[c]?.york), 0);
-  const ysjjTot     = ysjjCoreT + ysjjOtherT;
-
-  const ysjTot  = ysjIntake === "sep26" ? ysjsTot : ysjjTot;
-  const ysjTgt  = ysjIntake === "sep26" ? ysjsTgt : ysjjTgt;
-  const grandTot = sunTot + ysjsTot + ysjjTot;
-  const grandTgt = sunTgt + ysjsTgt + ysjjTgt;
-
-  // Current YSJ handlers
-  const ysjActuals  = ysjIntake === "sep26" ? ysjA_s : ysjA_j;
-  const ysjTargets  = ysjIntake === "sep26" ? ysjT_s : ysjT_j;
-  const ysjOther    = ysjIntake === "sep26" ? ysjO_s : ysjO_j;
-  const hYsjA       = ysjIntake === "sep26" ? hYsjAs : hYsjAj;
-  const hYsjT       = ysjIntake === "sep26" ? hYsjTs : hYsjTj;
-  const hYsjO       = ysjIntake === "sep26" ? hYsjOs : hYsjOj;
+  const grandTot = sunTot + ysjsTot;
+  const grandTgt = sunTgt + ysjsTgt;
 
   const uniTab = (id, label, accent, active) => (
     <button onClick={() => { setActiveUni(id); setSubTab("core"); }}
@@ -731,24 +701,20 @@ export default function App() {
         <div style={{ padding: "32px 40px" }}>
 
           {/* STATS ROW */}
-          {/* Row 1: Actual deposits switcher + cycling hero */}
           <div style={{ display: "flex", gap: 14, marginBottom: 14, flexWrap: "wrap", alignItems: "stretch" }}>
             <ActualDepositsCard views={[
-              { label: "All",            value: grandTot, accent: T.purple, sublabel: "Total across all universities & intakes" },
-              { label: "Sunderland",     value: sunTot,   accent: T.teal,   sublabel: "University of Sunderland · Aug–Nov 2026" },
-              { label: "YSJ Sep 2026",   value: ysjsTot,  accent: T.amber,  sublabel: "York St John · September 2026 intake"  },
-              { label: "YSJ Jan 2027",   value: ysjjTot,  accent: T.amber,  sublabel: "York St John · January 2027 intake"    },
+              { label: "All",          value: grandTot, accent: T.purple, sublabel: "Total across all universities" },
+              { label: "Sunderland",   value: sunTot,   accent: T.teal,   sublabel: "University of Sunderland · Aug–Nov 2026" },
+              { label: "York St John", value: ysjsTot,  accent: T.amber,  sublabel: "York St John · September 2026 intake" },
             ]} />
             <HeroCard slides={[
-              { label: "Study Now · All vs Target",  value: grandTot, max: grandTgt, accent: T.purple },
-              { label: "University of Sunderland",   value: sunTot,   max: sunTgt,   accent: T.teal   },
-              { label: "York St John · Sep 2026",    value: ysjsTot,  max: ysjsTgt,  accent: T.amber  },
-              { label: "York St John · Jan 2027",    value: ysjjTot,  max: ysjjTgt > 0 ? ysjjTgt : undefined, sub: ysjjTgt === 0 ? "Targets not yet set" : undefined, accent: T.amber },
+              { label: "Study Now · All vs Target", value: grandTot, max: grandTgt, accent: T.purple },
+              { label: "University of Sunderland",  value: sunTot,   max: sunTgt,   accent: T.teal   },
+              { label: "York St John · Sep 2026",   value: ysjsTot,  max: ysjsTgt,  accent: T.amber  },
               { label: "Breakdown", isPie: true,
                 segments: [
                   { label: "Sunderland",   value: sunTot,  color: T.teal  },
-                  { label: "YSJ Sep 2026", value: ysjsTot, color: T.amber },
-                  { label: "YSJ Jan 2027", value: ysjjTot, color: "#E8A030" },
+                  { label: "York St John", value: ysjsTot, color: T.amber },
                 ],
                 total: grandTot, accent: T.purple,
               },
@@ -756,9 +722,8 @@ export default function App() {
           </div>
           {/* Row 2: Individual target cards */}
           <div style={{ display: "flex", gap: 14, marginBottom: 36, flexWrap: "wrap" }}>
-            <StatCard label="Univ. of Sunderland"  value={sunTot}   max={sunTgt}                             accent={T.teal}  />
-            <StatCard label="YSJ · Sep 2026"       value={ysjsTot}  max={ysjsTgt}                            accent={T.amber} />
-            <StatCard label="YSJ · Jan 2027"       value={ysjjTot}  max={ysjjTgt > 0 ? ysjjTgt : undefined} sub={ysjjTgt === 0 ? "Targets not set" : undefined} accent={T.amber} />
+            <StatCard label="Univ. of Sunderland" value={sunTot}  max={sunTgt}  accent={T.teal}  />
+            <StatCard label="York St John · Sep 2026" value={ysjsTot} max={ysjsTgt} accent={T.amber} />
           </div>
 
           {/* UNIVERSITY TABS */}
@@ -776,14 +741,11 @@ export default function App() {
                 {subBtn("core", "Core Courses")}
                 {subBtn("other", "Other Courses")}
               </div>
-              {activeUni === "ysj" && (
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontSize: 12, color: T.inkL, fontWeight: 500 }}>Intake:</span>
-                  <IntakeToggle value={ysjIntake} onChange={(v) => { setYsjIntake(v); setSubTab("core"); }} />
-                </div>
-              )}
               {activeUni === "sun" && (
                 <span style={{ fontSize: 11, color: T.inkL, background: T.tealL, padding: "4px 10px", borderRadius: 99, fontWeight: 600 }}>Aug – Nov 2026</span>
+              )}
+              {activeUni === "ysj" && (
+                <span style={{ fontSize: 11, color: T.inkL, background: T.amberL, padding: "4px 10px", borderRadius: 99, fontWeight: 600 }}>Sep 2026</span>
               )}
             </div>
 
@@ -795,10 +757,10 @@ export default function App() {
               <OtherTable list={SUN_OTHER} actuals={sunO} onSet={hSunO} c1k="lon" c2k="sun" editable={editable} />
             )}
             {activeUni === "ysj" && subTab === "core" && (
-              <CourseTable courses={YSJ_COURSES} actuals={ysjActuals} onSetActuals={hYsjA} targets={ysjTargets} onSetTargets={hYsjT} c1k="lon" c2k="york" editable={editable} />
+              <CourseTable courses={YSJ_COURSES} actuals={ysjA_s} onSetActuals={hYsjAs} targets={ysjT_s} onSetTargets={hYsjTs} c1k="lon" c2k="york" editable={editable} />
             )}
             {activeUni === "ysj" && subTab === "other" && (
-              <OtherTable list={YSJ_OTHER} actuals={ysjOther} onSet={hYsjO} c1k="lon" c2k="york" editable={editable} />
+              <OtherTable list={YSJ_OTHER} actuals={ysjO_s} onSet={hYsjOs} c1k="lon" c2k="york" editable={editable} />
             )}
           </div>
 
