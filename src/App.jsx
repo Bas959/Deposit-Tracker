@@ -63,6 +63,8 @@ const SUN_OTHER = [
   "MSc International Business Management 15 Months",
   "MSc Project Management",
   "MSc Tourism and Hospitality",
+  "MSc Fintech and Trading",
+  "Master of Philosophy",
   "Master of Business Administration (Professional Practice) - 12 Months Placement",
 ];
 
