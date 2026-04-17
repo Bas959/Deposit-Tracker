@@ -65,6 +65,7 @@ const SUN_OTHER = [
   "MSc Tourism and Hospitality",
   "MSc Fintech and Trading",
   "MSc Philosophy",
+  "BEng (Hons) Mechanical Engineering",
   "Master of Business Administration (Professional Practice) - 12 Months Placement",
 ];
 
