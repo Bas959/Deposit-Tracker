@@ -618,18 +618,23 @@ export default function App() {
   };
 
   // ── Totals ────────────────────────────────────────────────────────────────────
-  const sunCoreTot  = SUN_COURSES.reduce((s, c) => s + ni(sunA[c.name]?.lon)  + ni(sunA[c.name]?.sun),  0);
+  // Core only — used for progress cards (like-for-like vs targets)
+  const sunCoreTot  = SUN_COURSES.reduce((s, c) => s + (ni(sunT[c.name]?.lon) > 0 ? ni(sunA[c.name]?.lon) : 0) + (ni(sunT[c.name]?.sun) > 0 ? ni(sunA[c.name]?.sun) : 0), 0);
   const sunTgt      = SUN_COURSES.reduce((s, c) => s + ni(sunT[c.name]?.lon)  + ni(sunT[c.name]?.sun),  0);
-  const sunOtherTot = SUN_OTHER.reduce((s, c) => s + ni(sunO[c]?.lon) + ni(sunO[c]?.sun), 0);
-  const sunTot      = sunCoreTot + sunOtherTot;
 
-  const ysjsCoreT   = YSJ_COURSES.reduce((s, c) => s + ni(ysjA_s[c.name]?.lon) + ni(ysjA_s[c.name]?.york), 0);
+  const ysjsCoreT   = YSJ_COURSES.reduce((s, c) => s + (ni(ysjT_s[c.name]?.lon) > 0 ? ni(ysjA_s[c.name]?.lon) : 0) + (ni(ysjT_s[c.name]?.york) > 0 ? ni(ysjA_s[c.name]?.york) : 0), 0);
   const ysjsTgt     = YSJ_COURSES.reduce((s, c) => s + ni(ysjT_s[c.name]?.lon) + ni(ysjT_s[c.name]?.york), 0);
-  const ysjsOtherT  = YSJ_OTHER.reduce((s, c) => s + ni(ysjO_s[c]?.lon) + ni(ysjO_s[c]?.york), 0);
-  const ysjsTot     = ysjsCoreT + ysjsOtherT;
 
-  const grandTot = sunTot + ysjsTot;
-  const grandTgt = sunTgt + ysjsTgt;
+  // Full totals (core + other) — used for Actual Deposits switcher card only
+  const sunOtherTot = SUN_OTHER.reduce((s, c) => s + ni(sunO[c]?.lon) + ni(sunO[c]?.sun), 0);
+  const sunTot      = SUN_COURSES.reduce((s, c) => s + ni(sunA[c.name]?.lon) + ni(sunA[c.name]?.sun), 0) + sunOtherTot;
+
+  const ysjsOtherT  = YSJ_OTHER.reduce((s, c) => s + ni(ysjO_s[c]?.lon) + ni(ysjO_s[c]?.york), 0);
+  const ysjsTot     = YSJ_COURSES.reduce((s, c) => s + ni(ysjA_s[c.name]?.lon) + ni(ysjA_s[c.name]?.york), 0) + ysjsOtherT;
+
+  const grandTot = sunTot + ysjsTot;           // full actuals — for switcher
+  const grandTgt = sunTgt + ysjsTgt;           // core targets
+  const grandCore = sunCoreTot + ysjsCoreT;    // core actuals — for progress cards
 
   const uniTab = (id, label, accent, active) => (
     <button onClick={() => { setActiveUni(id); setSubTab("core"); }}
@@ -712,9 +717,9 @@ export default function App() {
               { label: "York St John", value: ysjsTot,  accent: T.amber,  sublabel: "York St John · September 2026 intake" },
             ]} />
             <HeroCard slides={[
-              { label: "Study Now · All vs Target", value: grandTot, max: grandTgt, accent: T.purple },
-              { label: "University of Sunderland",  value: sunTot,   max: sunTgt,   accent: T.teal   },
-              { label: "York St John · Sep 2026",   value: ysjsTot,  max: ysjsTgt,  accent: T.amber  },
+              { label: "Study Now · All vs Target", value: grandCore, max: grandTgt, accent: T.purple },
+              { label: "University of Sunderland",  value: sunCoreTot, max: sunTgt,  accent: T.teal   },
+              { label: "York St John · Sep 2026",   value: ysjsCoreT,  max: ysjsTgt, accent: T.amber  },
               { label: "Breakdown", isPie: true,
                 segments: [
                   { label: "Sunderland",   value: sunTot,  color: T.teal  },
@@ -726,8 +731,8 @@ export default function App() {
           </div>
           {/* Row 2: Individual target cards */}
           <div style={{ display: "flex", gap: 14, marginBottom: 36, flexWrap: "wrap" }}>
-            <StatCard label="Univ. of Sunderland" value={sunTot}  max={sunTgt}  accent={T.teal}  />
-            <StatCard label="York St John · Sep 2026" value={ysjsTot} max={ysjsTgt} accent={T.amber} />
+            <StatCard label="Univ. of Sunderland"    value={sunCoreTot} max={sunTgt}  accent={T.teal}  />
+            <StatCard label="York St John · Sep 2026" value={ysjsCoreT}  max={ysjsTgt} accent={T.amber} />
           </div>
 
           {/* UNIVERSITY TABS */}
