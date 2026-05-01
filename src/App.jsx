@@ -65,7 +65,7 @@ const SUN_OTHER = [
   "MSc Tourism and Hospitality",
   "MSc Fintech and Trading",
   "MSc Philosophy",
-  "BA Business and Management",
+  "BA Business and Management (Top-Up)",
   "BEng (Hons) Mechanical Engineering",
   "BSc (Hons) Network Systems Engineering (Top-Up)",
   "Master of Business Administration (Professional Practice) - 12 Months Placement",
