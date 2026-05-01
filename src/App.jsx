@@ -52,6 +52,7 @@ const SUN_OTHER = [
   "OSPAP", "MA Education", "MA Marketing", "BSc (Hons) Nursing",
   "BSc (Hons) Nursing (Top Up)",
   "BSc (Hons) Nursing Practice (Top Up)", "BSc (Hons) Health and Social Care",
+  "BSc (Hons) Health and Social Care (Top Up)",
   "BEng Electronic & Electrical Engineering",
   "BA (Hons) Accounting and Financial Management",
   "BEng (Hons) Sustainable Design Engineering",
