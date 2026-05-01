@@ -217,7 +217,7 @@ function ActualDepositsCard({ views }) {
 }
 
 // ── STAT CARD ─────────────────────────────────────────────────────────────────
-function StatCard({ label, value, max, sub, accent }) {
+function StatCard({ label, value, max, sub, accent, institution }) {
   const p = max ? pct(value, max) : null;
   return (
     <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 14, padding: "18px 22px", flex: 1, minWidth: 150, transition: "box-shadow .2s", boxShadow: "0 1px 3px rgba(0,0,0,.04)" }}
@@ -229,7 +229,7 @@ function StatCard({ label, value, max, sub, accent }) {
       {max && (
         <>
           <div style={{ margin: "12px 0 6px" }}><Bar value={value} max={max} color={accent} h={6} /></div>
-          <p style={{ margin: 0, fontSize: 11, color: T.inkL }}><span style={{ color: accent, fontWeight: 700 }}>{p}%</span> of {max}</p>
+          <p style={{ margin: 0, fontSize: 11, color: T.inkL }}><span style={{ color: accent, fontWeight: 700 }}>{p}%</span> of {max} {institution} seat caps</p>
         </>
       )}
       {sub && <p style={{ margin: "8px 0 0", fontSize: 11, color: T.inkL }}>{sub}</p>}
@@ -716,23 +716,36 @@ export default function App() {
               { label: "Sunderland",   value: sunTot,   accent: T.teal,   sublabel: "University of Sunderland · Aug–Nov 2026" },
               { label: "York St John", value: ysjsTot,  accent: T.amber,  sublabel: "York St John · September 2026 intake" },
             ]} />
-            <HeroCard slides={[
-              { label: "Study Now · All vs Target", value: grandCore, max: grandTgt, accent: T.purple },
-              { label: "University of Sunderland",  value: sunCoreTot, max: sunTgt,  accent: T.teal   },
-              { label: "York St John · Sep 2026",   value: ysjsCoreT,  max: ysjsTgt, accent: T.amber  },
-              { label: "Breakdown", isPie: true,
-                segments: [
-                  { label: "Sunderland",   value: sunTot,  color: T.teal  },
-                  { label: "York St John", value: ysjsTot, color: T.amber },
-                ],
-                total: grandTot, accent: T.purple,
-              },
-            ]} />
+            <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 14, padding: "22px 26px", flex: "0 0 240px", boxShadow: "0 1px 3px rgba(0,0,0,.04)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div>
+                <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: T.inkL, letterSpacing: ".07em", textTransform: "uppercase" }}>Overall Deposits</p>
+                <p style={{ margin: "0 0 4px", fontSize: 72, fontWeight: 800, color: T.purple, fontFamily: "ui-monospace, monospace", lineHeight: 1 }}>{grandTot}</p>
+                <p style={{ margin: 0, fontSize: 12, color: T.inkL }}>Across all universities & courses</p>
+              </div>
+              <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: 99, background: T.teal }} />
+                    <span style={{ fontSize: 11, color: T.inkM, fontWeight: 500 }}>Sunderland</span>
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: T.teal, fontFamily: "ui-monospace, monospace" }}>{sunTot}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: 99, background: T.amber }} />
+                    <span style={{ fontSize: 11, color: T.inkM, fontWeight: 500 }}>York St John</span>
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: T.amber, fontFamily: "ui-monospace, monospace" }}>{ysjsTot}</span>
+                </div>
+                <div style={{ height: 1, background: T.border, margin: "2px 0" }} />
+                <Bar value={sunTot} max={grandTot} color={T.teal} h={5} />
+              </div>
+            </div>
           </div>
           {/* Row 2: Individual target cards */}
           <div style={{ display: "flex", gap: 14, marginBottom: 36, flexWrap: "wrap" }}>
-            <StatCard label="Univ. of Sunderland"    value={sunCoreTot} max={sunTgt}  accent={T.teal}  />
-            <StatCard label="York St John · Sep 2026" value={ysjsCoreT}  max={ysjsTgt} accent={T.amber} />
+            <StatCard label="Sunderland · Seat Caps"   value={sunCoreTot} max={sunTgt}  accent={T.teal}  institution="Univ. of Sunderland" />
+            <StatCard label="York St John · Seat Caps" value={ysjsCoreT}  max={ysjsTgt} accent={T.amber} institution="York St John" />
           </div>
 
           {/* UNIVERSITY TABS */}
