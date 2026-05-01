@@ -709,13 +709,9 @@ export default function App() {
         {/* ── MAIN ── */}
         <div style={{ padding: "32px 40px" }}>
 
-          {/* STATS ROW */}
-          <div style={{ display: "flex", gap: 14, marginBottom: 14, flexWrap: "wrap", alignItems: "stretch" }}>
-            <ActualDepositsCard views={[
-              { label: "All",          value: grandTot, accent: T.purple, sublabel: "Total across all universities" },
-              { label: "Sunderland",   value: sunTot,   accent: T.teal,   sublabel: "University of Sunderland · Aug–Nov 2026" },
-              { label: "York St John", value: ysjsTot,  accent: T.amber,  sublabel: "York St John · September 2026 intake" },
-            ]} />
+          {/* STATS ROW — Zone 1: Overall Deposits | Zone 2: Seat Caps */}
+          <div style={{ display: "flex", gap: 14, marginBottom: 28, flexWrap: "wrap", alignItems: "stretch" }}>
+            {/* Zone 1 — Overall Deposits */}
             <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 14, padding: "22px 26px", flex: "0 0 240px", boxShadow: "0 1px 3px rgba(0,0,0,.04)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
               <div>
                 <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: T.inkL, letterSpacing: ".07em", textTransform: "uppercase" }}>Overall Deposits</p>
@@ -741,9 +737,7 @@ export default function App() {
                 <Bar value={sunTot} max={grandTot} color={T.teal} h={5} />
               </div>
             </div>
-          </div>
-          {/* Row 2: Individual target cards */}
-          <div style={{ display: "flex", gap: 14, marginBottom: 36, flexWrap: "wrap" }}>
+            {/* Zone 2 — Seat Caps */}
             <StatCard label="Sunderland · Seat Caps"   value={sunCoreTot} max={sunTgt}  accent={T.teal}  institution="Univ. of Sunderland" />
             <StatCard label="York St John · Seat Caps" value={ysjsCoreT}  max={ysjsTgt} accent={T.amber} institution="York St John" />
           </div>
