@@ -17,6 +17,8 @@ const T = {
   tealL:   "#E6F7FF",
   amber:   "#C96A00",
   amberL:  "#FFF4E0",
+  rose:    "#BE123C",
+  roseL:   "#FFF1F2",
   ink:     "#16112B",
   inkM:    "#4A4467",
   inkL:    "#9490A8",
@@ -30,9 +32,10 @@ const T = {
 
 // Campus palette
 const CAM = {
-  lon:  { col: T.purple, bg: "#FAF7FF", sep: "#D8C8FF", label: "London"      },
-  sun:  { col: T.teal,   bg: "#F0FAFF", sep: "#BAE6FD", label: "Sunderland"  },
-  york: { col: T.amber,  bg: "#FFF9F0", sep: "#FDE68A", label: "York"        },
+  lon:      { col: T.purple, bg: "#FAF7FF", sep: "#D8C8FF", label: "London"   },
+  sun:      { col: T.teal,   bg: "#F0FAFF", sep: "#BAE6FD", label: "Sunderland" },
+  york:     { col: T.amber,  bg: "#FFF9F0", sep: "#FDE68A", label: "York"     },
+  hatfield: { col: T.rose,   bg: "#FFF1F5", sep: "#FECDD3", label: "Hatfield" },
 };
 
 // ── DATA ──────────────────────────────────────────────────────────────────────
@@ -149,6 +152,24 @@ const blankA = (courses, c1, c2) =>
   Object.fromEntries(courses.map(c => [c.name, { [c1]: "", [c2]: "" }]));
 const blankO = (list, c1, c2) =>
   Object.fromEntries(list.map(k => [k, { [c1]: "", [c2]: "" }]));
+
+const UH_COURSES = [
+  "MRes AI in Business",
+  "Master of Laws (LLM)",
+  "MA Human Resource Management",
+  "MSc Logistics and Supply Chain Management",
+  "MSc Management with Logistics and Supply Chain Management",
+  "MSc Power Electronics and Control",
+  "MA Education",
+  "MSc Cyber Security",
+  "MSc Environmental Management for Agriculture",
+  "MSc Management",
+  "MA Journalism & Media Communication",
+  "MSc Management with Digital Marketing",
+  "Mental Health Nursing",
+  "MRes Education",
+  "MSc Criminal Justice",
+];
 
 const ni  = (v) => parseInt(v) || 0;
 const pct = (a, t) => t > 0 ? Math.min(100, Math.round((a / t) * 100)) : null;
@@ -341,6 +362,45 @@ const TH = { padding: "10px 14px", textAlign: "left", fontSize: 11, fontWeight: 
 const TC = { textAlign: "center" };
 const TD = { padding: "10px 14px", verticalAlign: "middle", fontSize: 13, borderBottom: `1px solid ${T.bg}` };
 
+// ── UH ACTUALS TABLE (no targets) ─────────────────────────────────────────────
+function UHTable({ actuals, onSet, editable }) {
+  const c = CAM.hatfield;
+  const set   = (key, val) => onSet(p => ({ ...p, [key]: val }));
+  const total = UH_COURSES.reduce((s, course) => s + ni(actuals[course]), 0);
+  return (
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr>
+            <th style={TH}>Course</th>
+            <th style={{ ...TH, ...TC, background: c.bg, borderLeft: `2px solid ${c.sep}` }}>Hatfield · Actual</th>
+          </tr>
+        </thead>
+        <tbody>
+          {UH_COURSES.map((course, i) => {
+            const v = ni(actuals[course]);
+            return (
+              <tr key={course} style={{ background: i % 2 ? T.bg : T.white }}
+                onMouseEnter={e => e.currentTarget.style.background = "#FFF1F5"}
+                onMouseLeave={e => e.currentTarget.style.background = i % 2 ? T.bg : T.white}
+              >
+                <td style={{ ...TD, fontWeight: 500, color: T.ink }}>{course}</td>
+                <td style={{ ...TD, ...TC, background: c.bg, borderLeft: `2px solid ${c.sep}` }}>
+                  <Num value={actuals[course] || ""} accent={c.col} onChange={val => set(course, val)} readOnly={!editable} />
+                </td>
+              </tr>
+            );
+          })}
+          <tr style={{ background: T.rose }}>
+            <td style={{ ...TD, color: T.white, fontWeight: 700, fontSize: 13 }}>TOTALS</td>
+            <td style={{ ...TD, ...TC, color: T.white, fontWeight: 800, fontSize: 18, background: "rgba(255,255,255,.1)", borderLeft: "2px solid rgba(255,255,255,.2)", fontFamily: "ui-monospace, monospace" }}>{total}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 // ── COURSE TABLE ──────────────────────────────────────────────────────────────
 function CourseTable({ courses, actuals, onSetActuals, targets, onSetTargets, c1k, c2k, editable }) {
   const c1 = CAM[c1k], c2 = CAM[c2k];
@@ -530,6 +590,8 @@ export default function App() {
   const [ysjA_s, setYsjA_s] = useState(() => blankA(YSJ_COURSES, "lon", "york"));
   const [ysjT_s, setYsjT_s] = useState(() => buildT(YSJ_COURSES, "lon", "york"));
   const [ysjO_s, setYsjO_s] = useState(() => blankO(YSJ_OTHER, "lon", "york"));
+  // UH — actuals only (Hatfield, no targets)
+  const [uhA, setUhA] = useState(() => Object.fromEntries(UH_COURSES.map(c => [c, ""])));
   // UI
   const [activeUni,    setActiveUni]    = useState("sun");
   const [subTab,       setSubTab]       = useState("core");
@@ -541,7 +603,7 @@ export default function App() {
   const [logo,         setLogo]         = useState(null);
 
   const refs    = useRef({});
-  refs.current  = { sunA, sunT, sunO, ysjA_s, ysjT_s, ysjO_s, logo };
+  refs.current  = { sunA, sunT, sunO, ysjA_s, ysjT_s, ysjO_s, uhA, logo };
   const timer   = useRef(null);
   const editRef = useRef(editable);
   useEffect(() => { editRef.current = editable; }, [editable]);
@@ -560,6 +622,7 @@ export default function App() {
         s(setYsjA_s, data.ysj_actuals);
         s(setYsjT_s, data.ysj_targets);
         s(setYsjO_s, data.ysj_other_actuals);
+        if (data.uh_actuals && Object.keys(data.uh_actuals).length) setUhA(data.uh_actuals);
         if (data.logo_data) setLogo(data.logo_data);
         if (data.updated_at) setUpdatedAt(fmtDate(data.updated_at));
       }
@@ -573,6 +636,7 @@ export default function App() {
         s(setSunA,   row.actuals);       s(setSunT,   row.targets);
         s(setSunO,   row.other_actuals); s(setYsjA_s, row.ysj_actuals);
         s(setYsjT_s, row.ysj_targets);  s(setYsjO_s, row.ysj_other_actuals);
+        if (row.uh_actuals && Object.keys(row.uh_actuals).length) setUhA(row.uh_actuals);
         if (row.logo_data) setLogo(row.logo_data);
         if (row.updated_at) setUpdatedAt(fmtDate(row.updated_at));
       }).subscribe();
@@ -588,6 +652,7 @@ export default function App() {
       await supabase.from("tracker_data").update({
         actuals: r.sunA, targets: r.sunT, other_actuals: r.sunO,
         ysj_actuals: r.ysjA_s, ysj_targets: r.ysjT_s, ysj_other_actuals: r.ysjO_s,
+        uh_actuals: r.uhA,
         logo_data: r.logo, updated_at: now,
       }).eq("id", 1);
       setSaving(false);
@@ -611,6 +676,8 @@ export default function App() {
   const hYsjTs  = useCallback(u => { setYsjT_s(p => { const x=typeof u==="function"?u(p):u; if(editRef.current)save(); return x; }); }, [save]);
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const hYsjOs  = useCallback(u => { setYsjO_s(p => { const x=typeof u==="function"?u(p):u; if(editRef.current)save(); return x; }); }, [save]);
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const hUhA    = useCallback(u => { setUhA(p    => { const x=typeof u==="function"?u(p):u; if(editRef.current)save(); return x; }); }, [save]);
 
   const handleLogo = (e) => {
     const f = e.target.files[0]; if (!f) return;
@@ -634,9 +701,10 @@ export default function App() {
   const ysjsOtherT  = YSJ_OTHER.reduce((s, c) => s + ni(ysjO_s[c]?.lon) + ni(ysjO_s[c]?.york), 0);
   const ysjsTot     = YSJ_COURSES.reduce((s, c) => s + ni(ysjA_s[c.name]?.lon) + ni(ysjA_s[c.name]?.york), 0) + ysjsOtherT;
 
-  const grandTot = sunTot + ysjsTot;           // full actuals — for switcher
-  const grandTgt = sunTgt + ysjsTgt;           // core targets
-  const grandCore = sunCoreTot + ysjsCoreT;    // core actuals — for progress cards
+  const uhTot     = UH_COURSES.reduce((s, c) => s + ni(uhA[c]), 0);
+  const grandTot  = sunTot + ysjsTot + uhTot;   // full actuals — for switcher
+  const grandTgt  = sunTgt + ysjsTgt;           // core targets (UH has none)
+  const grandCore = sunCoreTot + ysjsCoreT;     // core actuals — for progress cards
 
   const uniTab = (id, label, accent, active) => (
     <button onClick={() => { setActiveUni(id); setSubTab("core"); }}
@@ -735,6 +803,13 @@ export default function App() {
                   </div>
                   <span style={{ fontSize: 12, fontWeight: 700, color: T.amber, fontFamily: "ui-monospace, monospace" }}>{ysjsTot}</span>
                 </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: 99, background: T.rose }} />
+                    <span style={{ fontSize: 11, color: T.inkM, fontWeight: 500 }}>Hertfordshire</span>
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: T.rose, fontFamily: "ui-monospace, monospace" }}>{uhTot}</span>
+                </div>
                 <div style={{ height: 1, background: T.border, margin: "2px 0" }} />
                 <Bar value={sunTot} max={grandTot} color={T.teal} h={5} />
               </div>
@@ -746,8 +821,9 @@ export default function App() {
 
           {/* UNIVERSITY TABS */}
           <div style={{ borderBottom: `2px solid ${T.border}`, display: "flex", gap: 0, marginBottom: 0 }}>
-            {uniTab("sun", "University of Sunderland", T.teal,   activeUni === "sun")}
-            {uniTab("ysj", "York St John University",  T.amber,  activeUni === "ysj")}
+            {uniTab("sun", "University of Sunderland",    T.teal,  activeUni === "sun")}
+            {uniTab("ysj", "York St John University",     T.amber, activeUni === "ysj")}
+            {uniTab("uh",  "University of Hertfordshire", T.rose,  activeUni === "uh")}
           </div>
 
           {/* CONTENT PANEL */}
@@ -756,8 +832,9 @@ export default function App() {
             {/* Panel toolbar */}
             <div style={{ padding: "12px 16px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: "#FAFAFA", flexWrap: "wrap", gap: 10 }}>
               <div style={{ display: "flex", gap: 6 }}>
-                {subBtn("core", "Core Courses")}
-                {subBtn("other", "Other Courses")}
+                {activeUni !== "uh" && subBtn("core", "Core Courses")}
+                {activeUni !== "uh" && subBtn("other", "Other Courses")}
+                {activeUni === "uh" && <span style={{ fontSize: 11, color: T.inkL, background: T.roseL, padding: "4px 10px", borderRadius: 99, fontWeight: 600, border: `1px solid #FECDD3` }}>Hatfield Campus</span>}
               </div>
               {activeUni === "sun" && (
                 <span style={{ fontSize: 11, color: T.inkL, background: T.tealL, padding: "4px 10px", borderRadius: 99, fontWeight: 600 }}>Aug – Nov 2026</span>
@@ -779,6 +856,9 @@ export default function App() {
             )}
             {activeUni === "ysj" && subTab === "other" && (
               <OtherTable list={YSJ_OTHER} actuals={ysjO_s} onSet={hYsjOs} c1k="lon" c2k="york" editable={editable} />
+            )}
+            {activeUni === "uh" && (
+              <UHTable actuals={uhA} onSet={hUhA} editable={editable} />
             )}
           </div>
 
