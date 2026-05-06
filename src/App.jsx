@@ -169,6 +169,7 @@ const UH_COURSES = [
   "Mental Health Nursing",
   "MRes Education",
   "MSc Criminal Justice",
+  "MRes in Digital Management",
 ];
 
 const ni  = (v) => parseInt(v) || 0;
