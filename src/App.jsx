@@ -993,24 +993,41 @@ function CourseManager({ config, onSave, onClose }) {
         </div>
 
         {/* University selector */}
-        <div style={{ padding: "12px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", gap: 6, flexWrap: "wrap", flexShrink: 0 }}>
-          {draft.map(u => (
-            <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <button onClick={() => setActiveUni(u.id)}
-                style={{ padding: "6px 14px", border: `1.5px solid ${activeUni === u.id ? u.color : T.border}`, borderRadius: 8, background: activeUni === u.id ? `${u.color}15` : T.white, color: activeUni === u.id ? u.color : T.inkM, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>
-                {u.shortName}
-              </button>
-              <button onClick={() => setEditingUni(JSON.parse(JSON.stringify(u)))}
-                style={{ padding: "4px 7px", background: T.white, border: `1px solid ${T.border}`, borderRadius: 6, cursor: "pointer", fontSize: 11, color: T.inkM }}>✏️</button>
-              <button onClick={() => {
-                if (window.confirm(`Remove ${u.name} from the tracker? This cannot be undone.`)) {
-                  setDraft(d => d.filter(x => x.id !== u.id));
-                  if (activeUni === u.id) setActiveUni(draft.find(x => x.id !== u.id)?.id || "");
-                }
-              }} style={{ padding: "4px 7px", background: T.white, border: `1px solid ${T.border}`, borderRadius: 6, cursor: "pointer", fontSize: 11, color: T.red }}>✕</button>
-            </div>
-          ))}
-          <button onClick={() => setAddingUni(true)} style={{ padding: "6px 14px", border: `1.5px dashed ${T.border}`, borderRadius: 8, background: T.white, color: T.inkL, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>+ Add University</button>
+        <div style={{ padding: "12px 24px", borderBottom: `1px solid ${T.border}`, flexShrink: 0, maxHeight: 280, overflowY: "auto" }}>
+          {/* Primary universities */}
+          <p style={{ margin: "0 0 6px", fontSize: 10, fontWeight: 700, color: T.inkL, letterSpacing: ".08em", textTransform: "uppercase" }}>Primary</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2, marginBottom: 12 }}>
+            {draft.filter(u => u.hasTargets).map(u => (
+              <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 8, background: activeUni === u.id ? `${u.color}15` : "transparent", border: `1px solid ${activeUni === u.id ? u.color + "40" : "transparent"}`, cursor: "pointer" }}
+                onClick={() => setActiveUni(u.id)}>
+                <div style={{ width: 8, height: 8, borderRadius: 99, background: u.color, flexShrink: 0 }} />
+                <span style={{ flex: 1, fontSize: 13, fontWeight: activeUni === u.id ? 700 : 500, color: activeUni === u.id ? u.color : T.ink }}>{u.name}</span>
+                <button onClick={e => { e.stopPropagation(); setEditingUni(JSON.parse(JSON.stringify(u))); }}
+                  style={{ padding: "2px 6px", background: "transparent", border: `1px solid ${T.border}`, borderRadius: 5, cursor: "pointer", fontSize: 11, color: T.inkM }}>✏️</button>
+                <button onClick={e => { e.stopPropagation(); if (window.confirm(`Remove ${u.name}?`)) { setDraft(d => d.filter(x => x.id !== u.id)); if (activeUni === u.id) setActiveUni(draft.find(x => x.id !== u.id)?.id || ""); }}}
+                  style={{ padding: "2px 6px", background: "transparent", border: `1px solid ${T.border}`, borderRadius: 5, cursor: "pointer", fontSize: 11, color: T.red }}>✕</button>
+              </div>
+            ))}
+          </div>
+          {/* Other universities */}
+          <p style={{ margin: "0 0 6px", fontSize: 10, fontWeight: 700, color: T.inkL, letterSpacing: ".08em", textTransform: "uppercase" }}>Other Universities</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            {draft.filter(u => !u.hasTargets).map(u => (
+              <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 8, background: activeUni === u.id ? `${u.color}12` : "transparent", border: `1px solid ${activeUni === u.id ? u.color + "30" : "transparent"}`, cursor: "pointer" }}
+                onClick={() => setActiveUni(u.id)}>
+                <div style={{ width: 7, height: 7, borderRadius: 99, background: u.color, flexShrink: 0 }} />
+                <span style={{ flex: 1, fontSize: 12, fontWeight: activeUni === u.id ? 700 : 400, color: activeUni === u.id ? u.color : T.inkM }}>{u.name}</span>
+                <button onClick={e => { e.stopPropagation(); setEditingUni(JSON.parse(JSON.stringify(u))); }}
+                  style={{ padding: "2px 6px", background: "transparent", border: `1px solid ${T.border}`, borderRadius: 5, cursor: "pointer", fontSize: 11, color: T.inkM }}>✏️</button>
+                <button onClick={e => { e.stopPropagation(); if (window.confirm(`Remove ${u.name}?`)) { setDraft(d => d.filter(x => x.id !== u.id)); if (activeUni === u.id) setActiveUni(draft.find(x => x.id !== u.id)?.id || ""); }}}
+                  style={{ padding: "2px 6px", background: "transparent", border: `1px solid ${T.border}`, borderRadius: 5, cursor: "pointer", fontSize: 11, color: T.red }}>✕</button>
+              </div>
+            ))}
+            <button onClick={() => setAddingUni(true)}
+              style={{ marginTop: 4, padding: "7px 10px", background: "transparent", border: `1.5px dashed ${T.border}`, borderRadius: 8, cursor: "pointer", fontSize: 12, color: T.inkL, textAlign: "left", fontFamily: "inherit" }}>
+              + Add University
+            </button>
+          </div>
         </div>
 
         {/* Content */}
