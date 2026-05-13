@@ -1272,6 +1272,7 @@ export default function App() {
   const [logo,        setLogo]        = useState(null);
 
   const [showUniDropdown, setShowUniDropdown] = useState(false);
+  const [showOthersBreakdown, setShowOthersBreakdown] = useState(false);
 
   const refs    = useRef({});
   refs.current  = { allActuals, config, logo };
@@ -1472,15 +1473,52 @@ export default function App() {
                 <p style={{ margin: 0, fontSize: 12, color: T.inkL }}>Across all universities & courses</p>
               </div>
               <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 7 }}>
-                {uniTotals.map(u => (
-                  <div key={u.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: 99, background: u.color }} />
-                      <span style={{ fontSize: 11, color: T.inkM, fontWeight: 500 }}>{u.shortName}</span>
-                    </div>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: u.color, fontFamily: "ui-monospace, monospace" }}>{u.total}</span>
-                  </div>
-                ))}
+                {(() => {
+                  const primary = uniTotals.filter(u => config.find(c => c.id === u.id)?.hasTargets);
+                  const others = uniTotals.filter(u => !config.find(c => c.id === u.id)?.hasTargets);
+                  const othersTotal = others.reduce((s, u) => s + u.total, 0);
+                  const othersWithData = others.filter(u => u.total > 0).sort((a, b) => b.total - a.total);
+                  return (
+                    <>
+                      {primary.map(u => (
+                        <div key={u.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <div style={{ width: 8, height: 8, borderRadius: 99, background: u.color }} />
+                            <span style={{ fontSize: 11, color: T.inkM, fontWeight: 500 }}>{u.shortName}</span>
+                          </div>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: u.color, fontFamily: "ui-monospace, monospace" }}>{u.total}</span>
+                        </div>
+                      ))}
+                      <div>
+                        <div
+                          onClick={() => othersTotal > 0 && setShowOthersBreakdown(v => !v)}
+                          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: othersTotal > 0 ? "pointer" : "default" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <div style={{ width: 8, height: 8, borderRadius: 99, background: T.inkL }} />
+                            <span style={{ fontSize: 11, color: T.inkM, fontWeight: 500 }}>Other Universities</span>
+                            {othersTotal > 0 && (
+                              <span style={{ fontSize: 9, color: T.inkL }}>{showOthersBreakdown ? "▲" : "▼"}</span>
+                            )}
+                          </div>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: T.inkL, fontFamily: "ui-monospace, monospace" }}>{othersTotal}</span>
+                        </div>
+                        {showOthersBreakdown && othersWithData.length > 0 && (
+                          <div style={{ marginTop: 6, paddingLeft: 14, display: "flex", flexDirection: "column", gap: 5, borderLeft: `2px solid ${T.border}` }}>
+                            {othersWithData.map(u => (
+                              <div key={u.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                  <div style={{ width: 6, height: 6, borderRadius: 99, background: u.color }} />
+                                  <span style={{ fontSize: 10, color: T.inkM }}>{u.shortName}</span>
+                                </div>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: u.color, fontFamily: "ui-monospace, monospace" }}>{u.total}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  );
+                })()}
                 <div style={{ height: 1, background: T.border, margin: "2px 0" }} />
                 <div style={{ display: "flex", borderRadius: 99, height: 5, overflow: "hidden", background: T.border }}>
                   {uniTotals.map(u => (
