@@ -276,6 +276,12 @@ function CourseTable({ uni, allActuals, onUpdate, editable }) {
   const c2A = c2 ? courses.reduce((s, c) => s + getActual(allActuals, uni.id, "core", c.name, c2.key), 0) : 0;
   const c1T = courses.reduce((s, c) => s + ni(c.targets?.[c1.key]), 0);
   const c2T = c2 ? courses.reduce((s, c) => s + ni(c.targets?.[c2.key]), 0) : 0;
+  const totalActual = courses.reduce((s, c) => {
+    const lt = ni(c.targets?.[c1.key]), st = c2 ? ni(c.targets?.[c2.key]) : 0;
+    const la = getActual(allActuals, uni.id, "core", c.name, c1.key);
+    const sa = c2 ? getActual(allActuals, uni.id, "core", c.name, c2.key) : 0;
+    return s + (lt > 0 ? la : 0) + (c2 && st > 0 ? sa : 0);
+  }, 0);
 
   return (
     <div style={{ overflowX: "auto" }}>
@@ -346,7 +352,7 @@ function CourseTable({ uni, allActuals, onUpdate, editable }) {
               <td style={{ ...TD, ...TC, color: T.white, fontWeight: 800, fontSize: 16, background: "rgba(255,255,255,.06)", fontFamily: "ui-monospace, monospace" }}>{c2A}</td>
             </>}
             <td style={{ ...TD, ...TC, color: T.white, fontWeight: 700, borderLeft: "1.5px solid rgba(255,255,255,.15)", fontFamily: "ui-monospace, monospace" }}>{c1T + c2T}</td>
-            <td style={{ ...TD, ...TC, color: T.white, fontWeight: 800, fontSize: 18, fontFamily: "ui-monospace, monospace" }}>{c1A + c2A}</td>
+            <td style={{ ...TD, ...TC, color: T.white, fontWeight: 800, fontSize: 18, fontFamily: "ui-monospace, monospace" }}>{totalActual}</td>
             <td colSpan={2} style={TD}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <div style={{ flex: 1, background: "rgba(255,255,255,.2)", borderRadius: 99, height: 6, overflow: "hidden" }}>
@@ -454,7 +460,7 @@ function Dashboard({ config, allActuals }) {
     } else {
       value = getUniTotal(uni);
     }
-    return { name: uni.shortName, value, color: uni.color, id: uni.id };
+    return { name: uni.shortName, shortName: uni.shortName, value, color: uni.color, id: uni.id };
   });
 
   // 2. Top courses — filtered by selected university
@@ -610,7 +616,7 @@ function Dashboard({ config, allActuals }) {
               <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <div style={{ width: 8, height: 8, borderRadius: 99, background: u.color }} />
-                  <span style={{ fontSize: 11, color: T.inkM }}>{u.name}</span>
+                  <span style={{ fontSize: 11, color: T.inkM }}>{u.shortName}</span>
                 </div>
                 <span style={{ fontSize: 11, fontWeight: 700, color: u.color, fontFamily: "ui-monospace, monospace" }}>
                   {u.value} {grandTotal > 0 ? `(${Math.round(u.value / grandTotal * 100)}%)` : ""}
@@ -689,7 +695,7 @@ function Dashboard({ config, allActuals }) {
                 .filter(k => k !== "name" && !k.endsWith("Color"))
                 .map((campusLabel, i) => (
                   <RBar key={campusLabel} dataKey={campusLabel} stackId="a"
-                    fill={i === 0 ? T.purple : T.teal} radius={i === 0 ? [0, 0, 0, 0] : [6, 6, 0, 0]}>
+                    fill={i === 0 ? (campusData[0]?.c1Color || T.purple) : (campusData[0]?.c2Color || T.teal)} radius={i === 0 ? [0, 0, 0, 0] : [6, 6, 0, 0]}>
                     <LabelList dataKey={campusLabel} position="inside" style={{ fontSize: 10, fill: T.white, fontWeight: 600 }}
                       formatter={v => v > 0 ? v : ""} />
                   </RBar>
@@ -1108,10 +1114,6 @@ export default function App() {
   });
 
   const grandTotal    = uniTotals.reduce((s, u) => s + u.total, 0);
-  const grandTarget   = uniTotals.reduce((s, u) => s + u.target, 0);
-  const grandCore     = uniTotals.reduce((s, u) => s + u.coreActual, 0);
-
-  const activeUni    = activeView !== "dashboard" ? activeView : "";
   const uniTab = (u, active) => (
     <button onClick={() => { setActiveView(u.id); setSubTab("core"); }}
       style={{ padding: "12px 22px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "inherit", borderRadius: "10px 10px 0 0", background: active ? T.white : "transparent", color: active ? u.color : T.inkL, borderBottom: active ? `3px solid ${u.color}` : "3px solid transparent", transition: "all .15s" }}>
@@ -1197,7 +1199,11 @@ export default function App() {
                   </div>
                 ))}
                 <div style={{ height: 1, background: T.border, margin: "2px 0" }} />
-                <Bar value={uniTotals[0]?.total || 0} max={grandTotal} color={uniTotals[0]?.color || T.teal} h={5} />
+                <div style={{ display: "flex", borderRadius: 99, height: 5, overflow: "hidden", background: T.border }}>
+                  {uniTotals.map(u => (
+                    <div key={u.id} style={{ width: `${grandTotal > 0 ? Math.round(u.total / grandTotal * 100) : 0}%`, height: "100%", background: u.color }} />
+                  ))}
+                </div>
               </div>
             </div>
             {/* Seat Caps cards — only for unis with targets */}
