@@ -1077,18 +1077,34 @@ export default function App() {
   // ── Computed totals ──────────────────────────────────────────────────────────
   const uniTotals = config.map(uni => {
     const c1 = uni.campus1, c2 = uni.campus2;
+    // Full actuals — all campuses, core + other (for Overall Deposits card)
+    const fullCore = uni.coreCourses.reduce((s, c) => {
+      const name = typeof c === "string" ? c : c.name;
+      return s + getActual(allActuals, uni.id, "core", name, c1.key)
+               + (c2 ? getActual(allActuals, uni.id, "core", name, c2.key) : 0);
+    }, 0);
+    const fullOther = (uni.otherCourses || []).reduce((s, c) => {
+      return s + getActual(allActuals, uni.id, "other", c, c1.key)
+               + (c2 ? getActual(allActuals, uni.id, "other", c, c2.key) : 0);
+    }, 0);
+    // Core actuals — only targeted campuses (for Seat Caps progress)
     const coreActual = uni.coreCourses.reduce((s, c) => {
       const name = typeof c === "string" ? c : c.name;
-      const lt = c2 ? ni(c.targets?.[c1.key]) : 1;
+      const lt = ni(c.targets?.[c1.key]);
       const st = c2 ? ni(c.targets?.[c2.key]) : 0;
-      return s + (uni.hasTargets ? (lt > 0 ? getActual(allActuals, uni.id, "core", name, c1.key) : 0) + (c2 && st > 0 ? getActual(allActuals, uni.id, "core", name, c2.key) : 0)
-                                 : getActual(allActuals, uni.id, "core", name, c1.key));
+      return s + (uni.hasTargets
+        ? (lt > 0 ? getActual(allActuals, uni.id, "core", name, c1.key) : 0)
+          + (c2 && st > 0 ? getActual(allActuals, uni.id, "core", name, c2.key) : 0)
+        : getActual(allActuals, uni.id, "core", name, c1.key))
     }, 0);
-    const otherActual = (uni.otherCourses || []).reduce((s, c) => {
-      return s + getActual(allActuals, uni.id, "other", c, c1.key) + (c2 ? getActual(allActuals, uni.id, "other", c, c2.key) : 0);
-    }, 0);
-    const target = uni.hasTargets ? uni.coreCourses.reduce((s, c) => s + ni(c.targets?.[c1.key]) + (c2 ? ni(c.targets?.[c2.key]) : 0), 0) : 0;
-    return { id: uni.id, name: uni.name, shortName: uni.shortName, color: uni.color, coreActual, otherActual, total: coreActual + otherActual, target };
+    const target = uni.hasTargets ? uni.coreCourses.reduce((s, c) =>
+      s + ni(c.targets?.[c1.key]) + (c2 ? ni(c.targets?.[c2.key]) : 0), 0) : 0;
+    return {
+      id: uni.id, name: uni.name, shortName: uni.shortName, color: uni.color,
+      total: fullCore + fullOther,
+      coreActual,
+      target,
+    };
   });
 
   const grandTotal    = uniTotals.reduce((s, u) => s + u.total, 0);
