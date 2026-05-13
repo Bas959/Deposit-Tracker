@@ -914,6 +914,7 @@ function CourseManager({ config, onSave, onClose }) {
   const [addingUni, setAddingUni] = useState(false);
   const [newUni, setNewUni]       = useState({ name: "", shortName: "", color: T.teal, intakeLabel: "", hasTargets: true, campus1: { key: "", label: "", color: T.purple }, campus2: { key: "", label: "", color: T.teal } });
   const [editingCourse, setEditingCourse] = useState(null); // { uniId, section, index }
+  const [editingUni, setEditingUni] = useState(null); // holds the uni object being edited
   const [saving, setSaving]       = useState(false);
 
   const uni = draft.find(u => u.id === activeUni);
@@ -980,15 +981,79 @@ function CourseManager({ config, onSave, onClose }) {
         {/* University selector */}
         <div style={{ padding: "12px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", gap: 6, flexWrap: "wrap", flexShrink: 0 }}>
           {draft.map(u => (
-            <button key={u.id} onClick={() => setActiveUni(u.id)} style={{ padding: "6px 14px", border: `1.5px solid ${activeUni === u.id ? u.color : T.border}`, borderRadius: 8, background: activeUni === u.id ? `${u.color}15` : T.white, color: activeUni === u.id ? u.color : T.inkM, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>
-              {u.shortName}
-            </button>
+            <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <button onClick={() => setActiveUni(u.id)}
+                style={{ padding: "6px 14px", border: `1.5px solid ${activeUni === u.id ? u.color : T.border}`, borderRadius: 8, background: activeUni === u.id ? `${u.color}15` : T.white, color: activeUni === u.id ? u.color : T.inkM, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>
+                {u.shortName}
+              </button>
+              <button onClick={() => setEditingUni(JSON.parse(JSON.stringify(u)))}
+                style={{ padding: "4px 7px", background: T.white, border: `1px solid ${T.border}`, borderRadius: 6, cursor: "pointer", fontSize: 11, color: T.inkM }}>✏️</button>
+              <button onClick={() => {
+                if (window.confirm(`Remove ${u.name} from the tracker? This cannot be undone.`)) {
+                  setDraft(d => d.filter(x => x.id !== u.id));
+                  if (activeUni === u.id) setActiveUni(draft.find(x => x.id !== u.id)?.id || "");
+                }
+              }} style={{ padding: "4px 7px", background: T.white, border: `1px solid ${T.border}`, borderRadius: 6, cursor: "pointer", fontSize: 11, color: T.red }}>✕</button>
+            </div>
           ))}
           <button onClick={() => setAddingUni(true)} style={{ padding: "6px 14px", border: `1.5px dashed ${T.border}`, borderRadius: 8, background: T.white, color: T.inkL, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>+ Add University</button>
         </div>
 
         {/* Content */}
         <div style={{ flex: 1, overflowY: "auto", padding: "16px 24px" }}>
+
+          {/* Edit University Form */}
+          {editingUni && (
+            <div style={{ background: T.bg, borderRadius: 12, padding: "16px", marginBottom: 16, border: `1.5px solid ${T.purple}30` }}>
+              <p style={{ margin: "0 0 12px", fontWeight: 700, fontSize: 13, color: T.ink }}>Edit University</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ flex: 2 }}>{inp(editingUni.name, v => setEditingUni(p => ({...p, name: v})), "Full name")}</div>
+                  <div style={{ flex: 1 }}>{inp(editingUni.shortName, v => setEditingUni(p => ({...p, shortName: v})), "Short name")}</div>
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {inp(editingUni.intakeLabel, v => setEditingUni(p => ({...p, intakeLabel: v})), "Intake label")}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                    <span style={{ fontSize: 12, color: T.inkM }}>Colour:</span>
+                    <input type="color" value={editingUni.color} onChange={e => setEditingUni(p => ({...p, color: e.target.value}))}
+                      style={{ width: 36, height: 32, border: `1px solid ${T.border}`, borderRadius: 6, cursor: "pointer" }} />
+                  </div>
+                </div>
+                <p style={{ margin: "4px 0 2px", fontSize: 12, fontWeight: 600, color: T.inkM }}>Campus 1</p>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {inp(editingUni.campus1.key, v => setEditingUni(p => ({...p, campus1: {...p.campus1, key: v}})), "Key (e.g. lon)")}
+                  {inp(editingUni.campus1.label, v => setEditingUni(p => ({...p, campus1: {...p.campus1, label: v}})), "Label (e.g. London)")}
+                  <input type="color" value={editingUni.campus1.color} onChange={e => setEditingUni(p => ({...p, campus1: {...p.campus1, color: e.target.value}}))}
+                    style={{ width: 36, height: 36, border: `1px solid ${T.border}`, borderRadius: 6, cursor: "pointer", flexShrink: 0 }} />
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <input type="checkbox" checked={!!editingUni.campus2} id="edit2campus"
+                    onChange={e => setEditingUni(p => ({...p, campus2: e.target.checked ? (p.campus2 || { key: "", label: "", color: T.teal }) : null}))} />
+                  <label htmlFor="edit2campus" style={{ fontSize: 12, color: T.inkM, cursor: "pointer" }}>Has a second campus</label>
+                </div>
+                {editingUni.campus2 && (
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {inp(editingUni.campus2.key, v => setEditingUni(p => ({...p, campus2: {...p.campus2, key: v}})), "Key (e.g. york)")}
+                    {inp(editingUni.campus2.label, v => setEditingUni(p => ({...p, campus2: {...p.campus2, label: v}})), "Label (e.g. York)")}
+                    <input type="color" value={editingUni.campus2.color || T.teal} onChange={e => setEditingUni(p => ({...p, campus2: {...p.campus2, color: e.target.value}}))}
+                      style={{ width: 36, height: 36, border: `1px solid ${T.border}`, borderRadius: 6, cursor: "pointer", flexShrink: 0 }} />
+                  </div>
+                )}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <input type="checkbox" checked={editingUni.hasTargets} id="editHasTargets"
+                    onChange={e => setEditingUni(p => ({...p, hasTargets: e.target.checked}))} />
+                  <label htmlFor="editHasTargets" style={{ fontSize: 12, color: T.inkM, cursor: "pointer" }}>Has seat cap targets</label>
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => {
+                    setDraft(d => d.map(u => u.id === editingUni.id ? { ...u, ...editingUni } : u));
+                    setEditingUni(null);
+                  }} style={{ padding: "8px 16px", background: T.purple, color: T.white, border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: "inherit" }}>Save Changes</button>
+                  <button onClick={() => setEditingUni(null)} style={{ padding: "8px 14px", background: T.bg, color: T.inkM, border: "none", borderRadius: 7, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>Cancel</button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Add University Form */}
           {addingUni && (
