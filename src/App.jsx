@@ -641,10 +641,10 @@ function Dashboard({ config, allActuals }) {
   // ── Chart data ───────────────────────────────────────────────────────────────
 
   // 1. Deposits by university — filtered by selected course
-  const uniBarData = config.map(uni => {
+  // All universities with values (used for grand total and pie)
+  const allUniData = config.map(uni => {
     let value;
     if (filterCourse) {
-      // Find which section the course belongs to
       const inCore  = uni.coreCourses.some(c => (typeof c === "string" ? c : c.name) === filterCourse);
       const inOther = (uni.otherCourses || []).includes(filterCourse);
       value = inCore  ? getCourseActual(uni, filterCourse, "core")
@@ -654,6 +654,12 @@ function Dashboard({ config, allActuals }) {
     }
     return { name: uni.shortName, shortName: uni.shortName, value, color: uni.color, id: uni.id };
   });
+
+  // Bar chart: filter zeros, sort descending; fallback to primary unis if no data
+  const uniBarData = allUniData.filter(u => u.value > 0).sort((a, b) => b.value - a.value);
+  const uniBarDisplay = uniBarData.length > 0
+    ? uniBarData
+    : config.filter(u => u.hasTargets).map(u => ({ name: u.shortName, value: 0, color: u.color, id: u.id }));
 
   // 2. Top courses — filtered by selected university
   const allCourses = [];
@@ -711,7 +717,15 @@ function Dashboard({ config, allActuals }) {
   });
 
   // 5. Pie data — university share
-  const grandTotal = uniBarData.reduce((s, u) => s + u.value, 0);
+  const grandTotal = allUniData.reduce((s, u) => s + u.value, 0);
+
+  // Pie: top 5 universities by deposits + grouped Others
+  const sortedForPie = [...allUniData].filter(u => u.value > 0).sort((a, b) => b.value - a.value);
+  const pieTop = sortedForPie.slice(0, 5);
+  const othersVal = sortedForPie.slice(5).reduce((s, u) => s + u.value, 0);
+  const pieData = othersVal > 0
+    ? [...pieTop, { name: "Others", value: othersVal, color: "#CBD5E1", id: "others" }]
+    : pieTop;
 
   // ── Chart styles ─────────────────────────────────────────────────────────────
   const chartCard = {
@@ -766,21 +780,21 @@ function Dashboard({ config, allActuals }) {
         <div style={{ ...chartCard, flex: 3, minWidth: 300 }}>
           <p style={chartTitle}>Deposits by University</p>
           <p style={chartSub}>
-            {filterCourse ? `Showing deposits for "${filterCourse}" — click a bar to filter courses` : "Click a bar to filter the Courses chart"}
+            {filterCourse ? `Showing deposits for "${filterCourse}"` : uniBarDisplay.length < allUniData.length ? `Showing ${uniBarDisplay.length} universities with deposits` : "Click a bar to filter the Courses chart"}
           </p>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={uniBarData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fill: T.inkM }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: T.inkL }} axisLine={false} tickLine={false} />
+          <ResponsiveContainer width="100%" height={Math.max(uniBarDisplay.length * 44, 120)}>
+            <BarChart data={uniBarDisplay} layout="vertical" margin={{ top: 0, right: 50, left: 4, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={T.border} horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 10, fill: T.inkL }} axisLine={false} tickLine={false} />
+              <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 11, fill: T.inkM }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <RBar dataKey="value" radius={[6, 6, 0, 0]} cursor="pointer"
+              <RBar dataKey="value" radius={[0, 6, 6, 0]} cursor="pointer"
                 onClick={d => setFilterUni(prev => prev === d.id ? null : d.id)}>
-                {uniBarData.map((entry, i) => (
+                {uniBarDisplay.map((entry, i) => (
                   <Cell key={i} fill={entry.color}
                     opacity={filterUni && filterUni !== entry.id ? 0.3 : 1} />
                 ))}
-                <LabelList dataKey="value" position="top" style={{ fontSize: 11, fill: T.inkM, fontWeight: 600 }} />
+                <LabelList dataKey="value" position="right" style={{ fontSize: 11, fill: T.inkM, fontWeight: 600 }} />
               </RBar>
             </BarChart>
           </ResponsiveContainer>
@@ -793,9 +807,9 @@ function Dashboard({ config, allActuals }) {
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
             {grandTotal > 0 ? (
               <PieChart width={200} height={180}>
-                <Pie data={uniBarData.filter(u => u.value > 0)} cx="50%" cy="50%"
+                <Pie data={pieData} cx="50%" cy="50%"
                   innerRadius={45} outerRadius={70} paddingAngle={3} dataKey="value">
-                  {uniBarData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                  {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                 </Pie>
                 <Tooltip formatter={(v, n) => [v, n]} content={<CustomTooltip />} />
               </PieChart>
@@ -804,11 +818,11 @@ function Dashboard({ config, allActuals }) {
             )}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            {uniBarData.map((u, i) => (
+            {pieData.map((u, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <div style={{ width: 8, height: 8, borderRadius: 99, background: u.color }} />
-                  <span style={{ fontSize: 11, color: T.inkM }}>{u.shortName}</span>
+                  <span style={{ fontSize: 11, color: T.inkM }}>{u.name}</span>
                 </div>
                 <span style={{ fontSize: 11, fontWeight: 700, color: u.color, fontFamily: "ui-monospace, monospace" }}>
                   {u.value} {grandTotal > 0 ? `(${Math.round(u.value / grandTotal * 100)}%)` : ""}
@@ -1257,11 +1271,23 @@ export default function App() {
   const [updatedAt,   setUpdatedAt]   = useState(null);
   const [logo,        setLogo]        = useState(null);
 
+  const [showUniDropdown, setShowUniDropdown] = useState(false);
+
   const refs    = useRef({});
   refs.current  = { allActuals, config, logo };
   const timer   = useRef(null);
   const editRef = useRef(editable);
+  const dropdownRef = useRef(null);
   useEffect(() => { editRef.current = editable; }, [editable]);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target))
+        setShowUniDropdown(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const fmtDate = d => new Date(d).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
@@ -1476,7 +1502,30 @@ export default function App() {
               style={{ padding: "12px 22px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "inherit", borderRadius: "10px 10px 0 0", background: activeView === "dashboard" ? T.white : "transparent", color: activeView === "dashboard" ? T.purple : T.inkL, borderBottom: activeView === "dashboard" ? `3px solid ${T.purple}` : "3px solid transparent", transition: "all .15s", display: "flex", alignItems: "center", gap: 6 }}>
               📊 Dashboard
             </button>
-            {config.map(u => uniTab(u, activeView === u.id))}
+            {config.filter(u => u.hasTargets).map(u => uniTab(u, activeView === u.id))}
+            {(() => {
+              const others = config.filter(u => !u.hasTargets);
+              if (!others.length) return null;
+              const activeOther = others.find(u => u.id === activeView);
+              return (
+                <div ref={dropdownRef} style={{ position: "relative" }}>
+                  <button onClick={() => setShowUniDropdown(v => !v)}
+                    style={{ padding: "12px 18px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "inherit", borderRadius: "10px 10px 0 0", background: activeOther ? T.white : "transparent", color: activeOther ? activeOther.color : T.inkL, borderBottom: activeOther ? `3px solid ${activeOther.color}` : "3px solid transparent", transition: "all .15s", display: "flex", alignItems: "center", gap: 6 }}>
+                    {activeOther ? activeOther.shortName : "Other Universities"} ▾
+                  </button>
+                  {showUniDropdown && (
+                    <div style={{ position: "absolute", top: "100%", left: 0, background: T.white, border: `1px solid ${T.border}`, borderRadius: "0 8px 8px 8px", boxShadow: "0 8px 24px rgba(0,0,0,.12)", zIndex: 100, minWidth: 240, maxHeight: 320, overflowY: "auto" }}>
+                      {others.map(u => (
+                        <button key={u.id} onClick={() => { setActiveView(u.id); setSubTab("core"); setShowUniDropdown(false); }}
+                          style={{ display: "block", width: "100%", textAlign: "left", padding: "10px 16px", background: activeView === u.id ? `${u.color}12` : "transparent", color: activeView === u.id ? u.color : T.ink, border: "none", borderLeft: `3px solid ${activeView === u.id ? u.color : "transparent"}`, cursor: "pointer", fontSize: 13, fontFamily: "inherit", fontWeight: activeView === u.id ? 700 : 400 }}>
+                          {u.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           {/* DASHBOARD VIEW */}
