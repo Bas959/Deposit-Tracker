@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  BarChart, Bar as RBar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell, LabelList, PieChart, Pie, Legend,
 } from "recharts";
 
@@ -576,14 +576,14 @@ function Dashboard({ config, allActuals }) {
               <XAxis dataKey="name" tick={{ fontSize: 11, fill: T.inkM }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: T.inkL }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="value" radius={[6, 6, 0, 0]} cursor="pointer"
+              <RBar dataKey="value" radius={[6, 6, 0, 0]} cursor="pointer"
                 onClick={d => setFilterUni(prev => prev === d.id ? null : d.id)}>
                 {uniBarData.map((entry, i) => (
                   <Cell key={i} fill={entry.color}
                     opacity={filterUni && filterUni !== entry.id ? 0.3 : 1} />
                 ))}
                 <LabelList dataKey="value" position="top" style={{ fontSize: 11, fill: T.inkM, fontWeight: 600 }} />
-              </Bar>
+              </RBar>
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -637,14 +637,14 @@ function Dashboard({ config, allActuals }) {
               <YAxis type="category" dataKey="name" width={200} tick={{ fontSize: 11, fill: T.inkM }} axisLine={false} tickLine={false}
                 tickFormatter={v => v.length > 30 ? v.slice(0, 30) + "…" : v} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="value" radius={[0, 6, 6, 0]} cursor="pointer"
+              <RBar dataKey="value" radius={[0, 6, 6, 0]} cursor="pointer"
                 onClick={d => setFilterCourse(prev => prev === d.name ? null : d.name)}>
                 {courseBarData.map((entry, i) => (
                   <Cell key={i} fill={entry.color}
                     opacity={filterCourse && filterCourse !== entry.name ? 0.3 : 1} />
                 ))}
                 <LabelList dataKey="value" position="right" style={{ fontSize: 11, fill: T.inkM, fontWeight: 600 }} />
-              </Bar>
+              </RBar>
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -660,13 +660,13 @@ function Dashboard({ config, allActuals }) {
               <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 11, fill: T.inkM }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-              <Bar dataKey="Target" fill={T.border} radius={[0, 4, 4, 0]} opacity={0.6}>
+              <RBar dataKey="Target" fill={T.border} radius={[0, 4, 4, 0]} opacity={0.6}>
                 <LabelList dataKey="Target" position="right" style={{ fontSize: 10, fill: T.inkL }} />
-              </Bar>
-              <Bar dataKey="Actual" radius={[0, 4, 4, 0]}>
+              </RBar>
+              <RBar dataKey="Actual" radius={[0, 4, 4, 0]}>
                 {targetData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                 <LabelList dataKey="Actual" position="right" style={{ fontSize: 10, fill: T.inkM, fontWeight: 600 }} />
-              </Bar>
+              </RBar>
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -688,11 +688,11 @@ function Dashboard({ config, allActuals }) {
               {campusData.length > 0 && Object.keys(campusData[0])
                 .filter(k => k !== "name" && !k.endsWith("Color"))
                 .map((campusLabel, i) => (
-                  <Bar key={campusLabel} dataKey={campusLabel} stackId="a"
+                  <RBar key={campusLabel} dataKey={campusLabel} stackId="a"
                     fill={i === 0 ? T.purple : T.teal} radius={i === 0 ? [0, 0, 0, 0] : [6, 6, 0, 0]}>
                     <LabelList dataKey={campusLabel} position="inside" style={{ fontSize: 10, fill: T.white, fontWeight: 600 }}
                       formatter={v => v > 0 ? v : ""} />
-                  </Bar>
+                  </RBar>
                 ))
               }
             </BarChart>
