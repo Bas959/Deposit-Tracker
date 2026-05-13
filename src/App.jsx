@@ -35,7 +35,7 @@ const CAMPUS_PRESETS = [
 // ── DEFAULT CONFIG (seeds Supabase on first load) ─────────────────────────────
 const DEFAULT_CONFIG = [
   {
-    id: "sunderland", name: "University of Sunderland", shortName: "Sunderland",
+    id: "sunderland", name: "University of Sunderland", shortName: "University of Sunderland",
     color: T.teal, intakeLabel: "Aug – Nov 2026", hasTargets: true,
     campus1: { key: "lon", label: "London", color: T.purple },
     campus2: { key: "sun", label: "Sunderland", color: T.teal },
