@@ -620,6 +620,7 @@ function OtherTable({ uni, allActuals, onUpdate, editable }) {
 function Dashboard({ config, allActuals }) {
   const [filterUni,    setFilterUni]    = useState(null);
   const [filterCourse, setFilterCourse] = useState(null);
+  const [showOtherUnis, setShowOtherUnis] = useState(false);
 
   // ── Data helpers ────────────────────────────────────────────────────────────
   const getCourseActual = useCallback((uni, courseName, section = "core") => {
@@ -782,22 +783,53 @@ function Dashboard({ config, allActuals }) {
           <p style={chartSub}>
             {filterCourse ? `Showing deposits for "${filterCourse}"` : uniBarDisplay.length < allUniData.length ? `Showing ${uniBarDisplay.length} universities with deposits` : "Click a bar to filter the Courses chart"}
           </p>
-          <ResponsiveContainer width="100%" height={Math.max(uniBarDisplay.length * 44, 120)}>
-            <BarChart data={uniBarDisplay} layout="vertical" margin={{ top: 0, right: 50, left: 4, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={T.border} horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 10, fill: T.inkL }} axisLine={false} tickLine={false} />
-              <YAxis type="category" dataKey="name" width={130} tick={{ fontSize: 11, fill: T.inkM }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <RBar dataKey="value" radius={[0, 6, 6, 0]} cursor="pointer"
-                onClick={d => setFilterUni(prev => prev === d.id ? null : d.id)}>
-                {uniBarDisplay.map((entry, i) => (
-                  <Cell key={i} fill={entry.color}
-                    opacity={filterUni && filterUni !== entry.id ? 0.3 : 1} />
-                ))}
-                <LabelList dataKey="value" position="right" style={{ fontSize: 11, fill: T.inkM, fontWeight: 600 }} />
-              </RBar>
-            </BarChart>
-          </ResponsiveContainer>
+          {(() => {
+            const primary = uniBarDisplay.filter(u => config.find(c => c.id === u.id)?.hasTargets);
+            const others  = uniBarDisplay.filter(u => !config.find(c => c.id === u.id)?.hasTargets);
+            const maxVal  = uniBarDisplay[0]?.value || 1;
+
+            const BarRow = ({ entry }) => (
+              <div onClick={() => setFilterUni(prev => prev === entry.id ? null : entry.id)}
+                style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "3px 0",
+                  opacity: filterUni && filterUni !== entry.id ? 0.35 : 1, transition: "opacity .15s" }}>
+                <span style={{ fontSize: 11, color: T.inkM, width: 130, textAlign: "right", flexShrink: 0,
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: filterUni === entry.id ? 700 : 400 }}>
+                  {entry.name}
+                </span>
+                <div style={{ flex: 1, background: T.border, borderRadius: "0 4px 4px 0", height: 18, overflow: "hidden" }}>
+                  <div style={{ width: `${Math.round(entry.value / maxVal * 100)}%`, height: "100%",
+                    background: entry.color, borderRadius: "0 4px 4px 0", transition: "width .4s ease" }} />
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 600, fontFamily: "ui-monospace, monospace",
+                  color: entry.color, width: 28, flexShrink: 0 }}>{entry.value}</span>
+              </div>
+            );
+
+            return (
+              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                {primary.map(u => <BarRow key={u.id} entry={u} />)}
+                {others.length > 0 && (
+                  <>
+                    <div onClick={() => setShowOtherUnis(v => !v)}
+                      style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "4px 0", marginTop: 2 }}>
+                      <span style={{ fontSize: 11, color: T.inkL, width: 130, textAlign: "right", flexShrink: 0 }}>
+                        Other Universities {showOtherUnis ? "▲" : "▼"}
+                      </span>
+                      <div style={{ flex: 1, height: 1, background: T.border }} />
+                      <span style={{ fontSize: 11, fontWeight: 600, fontFamily: "ui-monospace, monospace",
+                        color: T.inkL, width: 28, flexShrink: 0 }}>
+                        {others.reduce((s, u) => s + u.value, 0)}
+                      </span>
+                    </div>
+                    {showOtherUnis && others.map(u => <BarRow key={u.id} entry={u} />)}
+                  </>
+                )}
+                {uniBarDisplay.length === 0 && (
+                  <p style={{ fontSize: 12, color: T.inkL, textAlign: "center", padding: "20px 0" }}>No deposits recorded yet</p>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* University share pie */}
