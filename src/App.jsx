@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Cell, LabelList, PieChart, Pie, Legend,
+} from "recharts";
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -414,6 +418,295 @@ function OtherTable({ uni, allActuals, onUpdate, editable }) {
   );
 }
 
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function Dashboard({ config, allActuals }) {
+  const [filterUni,    setFilterUni]    = useState(null);
+  const [filterCourse, setFilterCourse] = useState(null);
+
+  // ── Data helpers ────────────────────────────────────────────────────────────
+  const getCourseActual = useCallback((uni, courseName, section = "core") => {
+    const c1 = uni.campus1.key, c2 = uni.campus2?.key;
+    return getActual(allActuals, uni.id, section, courseName, c1)
+         + (c2 ? getActual(allActuals, uni.id, section, courseName, c2) : 0);
+  }, [allActuals]);
+
+  const getUniTotal = useCallback((uni) => {
+    let t = 0;
+    uni.coreCourses.forEach(c => {
+      const name = typeof c === "string" ? c : c.name;
+      t += getCourseActual(uni, name, "core");
+    });
+    (uni.otherCourses || []).forEach(name => { t += getCourseActual(uni, name, "other"); });
+    return t;
+  }, [getCourseActual]);
+
+  // ── Chart data ───────────────────────────────────────────────────────────────
+
+  // 1. Deposits by university — filtered by selected course
+  const uniBarData = config.map(uni => {
+    let value;
+    if (filterCourse) {
+      // Find which section the course belongs to
+      const inCore  = uni.coreCourses.some(c => (typeof c === "string" ? c : c.name) === filterCourse);
+      const inOther = (uni.otherCourses || []).includes(filterCourse);
+      value = inCore  ? getCourseActual(uni, filterCourse, "core")
+            : inOther ? getCourseActual(uni, filterCourse, "other") : 0;
+    } else {
+      value = getUniTotal(uni);
+    }
+    return { name: uni.shortName, value, color: uni.color, id: uni.id };
+  });
+
+  // 2. Top courses — filtered by selected university
+  const allCourses = [];
+  config.forEach(uni => {
+    if (filterUni && uni.id !== filterUni) return;
+    uni.coreCourses.forEach(c => {
+      const name = typeof c === "string" ? c : c.name;
+      const val  = getCourseActual(uni, name, "core");
+      if (val > 0) allCourses.push({ name, value: val, color: uni.color, uni: uni.shortName });
+    });
+    (uni.otherCourses || []).forEach(name => {
+      const val = getCourseActual(uni, name, "other");
+      if (val > 0) allCourses.push({ name, value: val, color: uni.color, uni: uni.shortName });
+    });
+  });
+  // Merge same-name courses across unis, sum values
+  const courseMap = {};
+  allCourses.forEach(({ name, value, color, uni }) => {
+    if (!courseMap[name]) courseMap[name] = { name, value: 0, color, uni };
+    courseMap[name].value += value;
+  });
+  const courseBarData = Object.values(courseMap)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 15);
+
+  // 3. Target vs Actual — only for unis with targets
+  const targetData = config
+    .filter(u => u.hasTargets)
+    .map(uni => {
+      const target = uni.coreCourses.reduce((s, c) => {
+        const t = c.targets || {};
+        return s + ni(t[uni.campus1.key]) + ni(uni.campus2 ? t[uni.campus2.key] : 0);
+      }, 0);
+      const actual = uni.coreCourses.reduce((s, c) => {
+        const name = typeof c === "string" ? c : c.name;
+        const lt = ni(c.targets?.[uni.campus1.key]);
+        const st = uni.campus2 ? ni(c.targets?.[uni.campus2.key]) : 0;
+        return s + (lt > 0 ? getActual(allActuals, uni.id, "core", name, uni.campus1.key) : 0)
+                 + (st > 0 && uni.campus2 ? getActual(allActuals, uni.id, "core", name, uni.campus2.key) : 0);
+      }, 0);
+      return { name: uni.shortName, Actual: actual, Target: target, color: uni.color };
+    });
+
+  // 4. Campus split — unis with 2 campuses
+  const campusData = config.filter(u => u.campus2).map(uni => {
+    const c1Total = uni.coreCourses.reduce((s, c) => s + getActual(allActuals, uni.id, "core", typeof c === "string" ? c : c.name, uni.campus1.key), 0);
+    const c2Total = uni.coreCourses.reduce((s, c) => s + getActual(allActuals, uni.id, "core", typeof c === "string" ? c : c.name, uni.campus2.key), 0);
+    return {
+      name: uni.shortName,
+      [uni.campus1.label]: c1Total,
+      [uni.campus2.label]: c2Total,
+      c1Color: uni.campus1.color,
+      c2Color: uni.campus2.color,
+    };
+  });
+
+  // 5. Pie data — university share
+  const grandTotal = uniBarData.reduce((s, u) => s + u.value, 0);
+
+  // ── Chart styles ─────────────────────────────────────────────────────────────
+  const chartCard = {
+    background: T.white, border: `1px solid ${T.border}`,
+    borderRadius: 14, padding: "20px 20px 12px",
+    boxShadow: "0 1px 3px rgba(0,0,0,.04)",
+  };
+  const chartTitle = { margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: T.ink };
+  const chartSub   = { margin: "0 0 16px", fontSize: 11, color: T.inkL };
+
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (!active || !payload?.length) return null;
+    return (
+      <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, padding: "10px 14px", boxShadow: "0 4px 12px rgba(0,0,0,.1)" }}>
+        <p style={{ margin: "0 0 4px", fontSize: 12, fontWeight: 600, color: T.ink }}>{label}</p>
+        {payload.map((p, i) => (
+          <p key={i} style={{ margin: 0, fontSize: 12, color: p.color || T.purple }}>
+            {p.name}: <strong>{p.value}</strong>
+          </p>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ padding: "28px 40px" }}>
+
+      {/* Active filter chips */}
+      {(filterUni || filterCourse) && (
+        <div style={{ display: "flex", gap: 8, marginBottom: 20, alignItems: "center" }}>
+          <span style={{ fontSize: 11, color: T.inkL, fontWeight: 600 }}>Filtering by:</span>
+          {filterUni && (
+            <span style={{ display: "flex", alignItems: "center", gap: 6, background: `${config.find(u => u.id === filterUni)?.color}18`, border: `1px solid ${config.find(u => u.id === filterUni)?.color}40`, color: config.find(u => u.id === filterUni)?.color, padding: "4px 10px", borderRadius: 99, fontSize: 11, fontWeight: 600 }}>
+              {config.find(u => u.id === filterUni)?.shortName}
+              <button onClick={() => setFilterUni(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", fontSize: 13, padding: 0, lineHeight: 1 }}>✕</button>
+            </span>
+          )}
+          {filterCourse && (
+            <span style={{ display: "flex", alignItems: "center", gap: 6, background: `${T.purple}15`, border: `1px solid ${T.purple}40`, color: T.purple, padding: "4px 10px", borderRadius: 99, fontSize: 11, fontWeight: 600 }}>
+              {filterCourse}
+              <button onClick={() => setFilterCourse(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "inherit", fontSize: 13, padding: 0, lineHeight: 1 }}>✕</button>
+            </span>
+          )}
+          <button onClick={() => { setFilterUni(null); setFilterCourse(null); }} style={{ fontSize: 11, color: T.inkL, background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>Clear all</button>
+        </div>
+      )}
+
+      {/* Row 1: Deposits by University + Pie */}
+      <div style={{ display: "flex", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
+
+        {/* Deposits by University */}
+        <div style={{ ...chartCard, flex: 3, minWidth: 300 }}>
+          <p style={chartTitle}>Deposits by University</p>
+          <p style={chartSub}>
+            {filterCourse ? `Showing deposits for "${filterCourse}" — click a bar to filter courses` : "Click a bar to filter the Courses chart"}
+          </p>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={uniBarData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: T.inkM }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: T.inkL }} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar dataKey="value" radius={[6, 6, 0, 0]} cursor="pointer"
+                onClick={d => setFilterUni(prev => prev === d.id ? null : d.id)}>
+                {uniBarData.map((entry, i) => (
+                  <Cell key={i} fill={entry.color}
+                    opacity={filterUni && filterUni !== entry.id ? 0.3 : 1} />
+                ))}
+                <LabelList dataKey="value" position="top" style={{ fontSize: 11, fill: T.inkM, fontWeight: 600 }} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* University share pie */}
+        <div style={{ ...chartCard, flex: 1.2, minWidth: 220, display: "flex", flexDirection: "column" }}>
+          <p style={chartTitle}>University Share</p>
+          <p style={chartSub}>Proportion of total deposits</p>
+          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {grandTotal > 0 ? (
+              <PieChart width={200} height={180}>
+                <Pie data={uniBarData.filter(u => u.value > 0)} cx="50%" cy="50%"
+                  innerRadius={45} outerRadius={70} paddingAngle={3} dataKey="value">
+                  {uniBarData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                </Pie>
+                <Tooltip formatter={(v, n) => [v, n]} content={<CustomTooltip />} />
+              </PieChart>
+            ) : (
+              <p style={{ color: T.inkL, fontSize: 12 }}>No data yet</p>
+            )}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            {uniBarData.map((u, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 99, background: u.color }} />
+                  <span style={{ fontSize: 11, color: T.inkM }}>{u.name}</span>
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 700, color: u.color, fontFamily: "ui-monospace, monospace" }}>
+                  {u.value} {grandTotal > 0 ? `(${Math.round(u.value / grandTotal * 100)}%)` : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Row 2: Top Courses + Target vs Actual */}
+      <div style={{ display: "flex", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
+
+        {/* Top Courses */}
+        <div style={{ ...chartCard, flex: 2, minWidth: 300 }}>
+          <p style={chartTitle}>Top Courses by Deposits</p>
+          <p style={chartSub}>
+            {filterUni ? `Filtered to ${config.find(u => u.id === filterUni)?.shortName} — click a bar to filter the University chart` : "Showing top 15 courses — click a bar to filter the University chart"}
+          </p>
+          <ResponsiveContainer width="100%" height={Math.max(courseBarData.length * 28, 200)}>
+            <BarChart data={courseBarData} layout="vertical" margin={{ top: 0, right: 40, left: 4, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={T.border} horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 10, fill: T.inkL }} axisLine={false} tickLine={false} />
+              <YAxis type="category" dataKey="name" width={200} tick={{ fontSize: 11, fill: T.inkM }} axisLine={false} tickLine={false}
+                tickFormatter={v => v.length > 30 ? v.slice(0, 30) + "…" : v} />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar dataKey="value" radius={[0, 6, 6, 0]} cursor="pointer"
+                onClick={d => setFilterCourse(prev => prev === d.name ? null : d.name)}>
+                {courseBarData.map((entry, i) => (
+                  <Cell key={i} fill={entry.color}
+                    opacity={filterCourse && filterCourse !== entry.name ? 0.3 : 1} />
+                ))}
+                <LabelList dataKey="value" position="right" style={{ fontSize: 11, fill: T.inkM, fontWeight: 600 }} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Target vs Actual */}
+        <div style={{ ...chartCard, flex: 1.5, minWidth: 260 }}>
+          <p style={chartTitle}>Target vs Actual · Seat Caps</p>
+          <p style={chartSub}>Core courses only — universities with targets</p>
+          <ResponsiveContainer width="100%" height={Math.max(targetData.length * 60, 180)}>
+            <BarChart data={targetData} layout="vertical" margin={{ top: 0, right: 40, left: 4, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={T.border} horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 10, fill: T.inkL }} axisLine={false} tickLine={false} />
+              <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 11, fill: T.inkM }} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
+              <Bar dataKey="Target" fill={T.border} radius={[0, 4, 4, 0]} opacity={0.6}>
+                <LabelList dataKey="Target" position="right" style={{ fontSize: 10, fill: T.inkL }} />
+              </Bar>
+              <Bar dataKey="Actual" radius={[0, 4, 4, 0]}>
+                {targetData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                <LabelList dataKey="Actual" position="right" style={{ fontSize: 10, fill: T.inkM, fontWeight: 600 }} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Row 3: Campus Split */}
+      {campusData.length > 0 && (
+        <div style={{ ...chartCard }}>
+          <p style={chartTitle}>Campus Distribution</p>
+          <p style={chartSub}>Core course deposits split by campus</p>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={campusData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: T.inkM }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: T.inkL }} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend wrapperStyle={{ fontSize: 11 }} />
+              {/* Dynamic bars for each campus label */}
+              {campusData.length > 0 && Object.keys(campusData[0])
+                .filter(k => k !== "name" && !k.endsWith("Color"))
+                .map((campusLabel, i) => (
+                  <Bar key={campusLabel} dataKey={campusLabel} stackId="a"
+                    fill={i === 0 ? T.purple : T.teal} radius={i === 0 ? [0, 0, 0, 0] : [6, 6, 0, 0]}>
+                    <LabelList dataKey={campusLabel} position="inside" style={{ fontSize: 10, fill: T.white, fontWeight: 600 }}
+                      formatter={v => v > 0 ? v : ""} />
+                  </Bar>
+                ))
+              }
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      <p style={{ margin: "16px 0 0", fontSize: 11, color: T.inkL, textAlign: "center" }}>
+        Click any bar to cross-filter · Click again to clear · Use chips above to clear filters
+      </p>
+    </div>
+  );
+}
+
 // ── COURSE MANAGER PANEL ──────────────────────────────────────────────────────
 function CourseManager({ config, onSave, onClose }) {
   const [draft, setDraft]         = useState(JSON.parse(JSON.stringify(config)));
@@ -691,7 +984,7 @@ function PasscodeModal({ onSuccess, onClose }) {
 export default function App() {
   const [config,      setConfig]      = useState([]);
   const [allActuals,  setAllActuals]  = useState({});
-  const [activeUni,   setActiveUni]   = useState("");
+  const [activeView,   setActiveView]   = useState("dashboard"); // "dashboard" | uniId
   const [subTab,      setSubTab]      = useState("core");
   const [editable,    setEditable]    = useState(false);
   const [showModal,   setShowModal]   = useState(false);
@@ -718,7 +1011,7 @@ export default function App() {
       // Load config
       let cfg = data.course_config && data.course_config.length ? data.course_config : DEFAULT_CONFIG;
       setConfig(cfg);
-      setActiveUni(cfg[0]?.id || "");
+      setActiveView("dashboard");
 
       // Load actuals — migrate from old format if needed
       let acts = data.all_actuals && Object.keys(data.all_actuals).length
@@ -802,9 +1095,9 @@ export default function App() {
   const grandTarget   = uniTotals.reduce((s, u) => s + u.target, 0);
   const grandCore     = uniTotals.reduce((s, u) => s + u.coreActual, 0);
 
-  const activeUniObj  = config.find(u => u.id === activeUni);
+  const activeUni    = activeView !== "dashboard" ? activeView : "";
   const uniTab = (u, active) => (
-    <button onClick={() => { setActiveUni(u.id); setSubTab("core"); }}
+    <button onClick={() => { setActiveView(u.id); setSubTab("core"); }}
       style={{ padding: "12px 22px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "inherit", borderRadius: "10px 10px 0 0", background: active ? T.white : "transparent", color: active ? u.color : T.inkL, borderBottom: active ? `3px solid ${u.color}` : "3px solid transparent", transition: "all .15s" }}>
       {u.shortName}
     </button>
@@ -897,35 +1190,50 @@ export default function App() {
             ))}
           </div>
 
-          {/* UNIVERSITY TABS */}
+          {/* NAVIGATION TABS */}
           <div style={{ borderBottom: `2px solid ${T.border}`, display: "flex", gap: 0, flexWrap: "wrap" }}>
-            {config.map(u => uniTab(u, activeUni === u.id))}
+            {/* Dashboard tab */}
+            <button onClick={() => setActiveView("dashboard")}
+              style={{ padding: "12px 22px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "inherit", borderRadius: "10px 10px 0 0", background: activeView === "dashboard" ? T.white : "transparent", color: activeView === "dashboard" ? T.purple : T.inkL, borderBottom: activeView === "dashboard" ? `3px solid ${T.purple}` : "3px solid transparent", transition: "all .15s", display: "flex", alignItems: "center", gap: 6 }}>
+              📊 Dashboard
+            </button>
+            {config.map(u => uniTab(u, activeView === u.id))}
           </div>
 
-          {activeUniObj && (
-            <div style={{ background: T.white, borderRadius: "0 12px 12px 12px", border: `1px solid ${T.border}`, borderTop: "none", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
-              {/* Panel toolbar */}
-              <div style={{ padding: "12px 16px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: "#FAFAFA", flexWrap: "wrap", gap: 10 }}>
-                <div style={{ display: "flex", gap: 6 }}>
-                  {activeUniObj.hasTargets && subBtn("core", "Core Courses")}
-                  {activeUniObj.hasTargets && subBtn("other", "Other Courses")}
-                  {!activeUniObj.hasTargets && <span style={{ fontSize: 11, color: T.inkL, background: `${activeUniObj.color}15`, padding: "4px 10px", borderRadius: 99, fontWeight: 600, border: `1px solid ${activeUniObj.color}30` }}>{activeUniObj.campus1.label} Campus</span>}
-                </div>
-                <span style={{ fontSize: 11, color: T.inkL, background: `${activeUniObj.color}15`, padding: "4px 10px", borderRadius: 99, fontWeight: 600, border: `1px solid ${activeUniObj.color}30` }}>{activeUniObj.intakeLabel}</span>
-              </div>
-
-              {/* Table */}
-              {activeUniObj.hasTargets && subTab === "core" && (
-                <CourseTable uni={activeUniObj} allActuals={allActuals} onUpdate={handleActualsUpdate} editable={editable} />
-              )}
-              {activeUniObj.hasTargets && subTab === "other" && (
-                <OtherTable uni={activeUniObj} allActuals={allActuals} onUpdate={handleActualsUpdate} editable={editable} />
-              )}
-              {!activeUniObj.hasTargets && (
-                <OtherTable uni={{ ...activeUniObj, otherCourses: activeUniObj.coreCourses.map(c => typeof c === "string" ? c : c.name) }} allActuals={{ ...allActuals, [activeUniObj.id]: { other: allActuals[activeUniObj.id]?.core || {}, core: {} } }} onUpdate={newA => handleActualsUpdate({ ...allActuals, [activeUniObj.id]: { ...allActuals[activeUniObj.id], core: newA[activeUniObj.id]?.other || {} } })} editable={editable} />
-              )}
+          {/* DASHBOARD VIEW */}
+          {activeView === "dashboard" && (
+            <div style={{ background: T.white, borderRadius: "0 12px 12px 12px", border: `1px solid ${T.border}`, borderTop: "none", boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
+              <Dashboard config={config} allActuals={allActuals} />
             </div>
           )}
+
+          {/* UNIVERSITY TABLE VIEW */}
+          {activeView !== "dashboard" && (() => {
+            const activeUniObj = config.find(u => u.id === activeView);
+            if (!activeUniObj) return null;
+            return (
+              <div style={{ background: T.white, borderRadius: "0 12px 12px 12px", border: `1px solid ${T.border}`, borderTop: "none", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
+                {/* Panel toolbar */}
+                <div style={{ padding: "12px 16px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", background: "#FAFAFA", flexWrap: "wrap", gap: 10 }}>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {activeUniObj.hasTargets && subBtn("core", "Core Courses")}
+                    {activeUniObj.hasTargets && subBtn("other", "Other Courses")}
+                    {!activeUniObj.hasTargets && <span style={{ fontSize: 11, color: T.inkL, background: `${activeUniObj.color}15`, padding: "4px 10px", borderRadius: 99, fontWeight: 600, border: `1px solid ${activeUniObj.color}30` }}>{activeUniObj.campus1.label} Campus</span>}
+                  </div>
+                  <span style={{ fontSize: 11, color: T.inkL, background: `${activeUniObj.color}15`, padding: "4px 10px", borderRadius: 99, fontWeight: 600, border: `1px solid ${activeUniObj.color}30` }}>{activeUniObj.intakeLabel}</span>
+                </div>
+                {activeUniObj.hasTargets && subTab === "core" && (
+                  <CourseTable uni={activeUniObj} allActuals={allActuals} onUpdate={handleActualsUpdate} editable={editable} />
+                )}
+                {activeUniObj.hasTargets && subTab === "other" && (
+                  <OtherTable uni={activeUniObj} allActuals={allActuals} onUpdate={handleActualsUpdate} editable={editable} />
+                )}
+                {!activeUniObj.hasTargets && (
+                  <OtherTable uni={{ ...activeUniObj, otherCourses: activeUniObj.coreCourses.map(c => typeof c === "string" ? c : c.name) }} allActuals={{ ...allActuals, [activeUniObj.id]: { other: allActuals[activeUniObj.id]?.core || {}, core: {} } }} onUpdate={newA => handleActualsUpdate({ ...allActuals, [activeUniObj.id]: { ...allActuals[activeUniObj.id], core: newA[activeUniObj.id]?.other || {} } })} editable={editable} />
+                )}
+              </div>
+            );
+          })()}
 
           <p style={{ margin: "16px 0 0", fontSize: 11, color: T.inkL, textAlign: "center" }}>
             Includes: Deposits · Sept 26 Deposits · Defer/Refund/Change Uni &nbsp;·&nbsp; Closed Lost excluded
