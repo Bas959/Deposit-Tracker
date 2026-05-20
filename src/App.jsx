@@ -1100,8 +1100,27 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
               <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: 11, fill: T.inkM }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: T.inkL }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
+              <Tooltip content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null;
+                const entry = campusData.find(d => d.name === label);
+                if (!entry) return null;
+                return (
+                  <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, padding: "10px 14px", fontSize: 12 }}>
+                    <p style={{ fontWeight: 700, color: T.ink, marginBottom: 6 }}>{label}</p>
+                    {payload.map((p, i) => (
+                      <p key={i} style={{ color: p.fill, margin: "2px 0" }}>
+                        {i === 0 ? entry.c1 : entry.c2}: <strong>{p.value}</strong>
+                      </p>
+                    ))}
+                  </div>
+                );
+              }} />
+              <Legend wrapperStyle={{ fontSize: 11 }} formatter={(value, entry, index) => {
+                if (campusData.length === 0) return value;
+                return index === 0
+                  ? campusData.map(d => d.c1).join(' / ')
+                  : campusData.map(d => d.c2).join(' / ');
+              }} />
               <RBar dataKey="c1Total" stackId="s" name={campusData[0]?.c1 || "Campus 1"} radius={[0, 0, 0, 0]}>
                 {campusData.map((entry, i) => <Cell key={i} fill={entry.c1Color} />)}
                 <LabelList dataKey="c1Total" position="inside" style={{ fontSize: 11, fill: "#fff", fontWeight: 600 }} />
