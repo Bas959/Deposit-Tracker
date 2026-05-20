@@ -22,6 +22,14 @@ const T = {
   green:  "#16A34A", red: "#DC2626", yellow: "#CA8A04",
 };
 
+const chartCard = {
+  background: T.white, border: `1px solid ${T.border}`,
+  borderRadius: 14, padding: "20px 20px 12px",
+  boxShadow: "0 1px 3px rgba(0,0,0,.04)",
+};
+const chartTitle = { margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: T.ink };
+const chartSub   = { margin: "0 0 16px", fontSize: 11, color: T.inkL };
+
 // Preset campus colours available when adding universities
 const CAMPUS_PRESETS = [
   { key: "london",     label: "London",      color: "#6C27E8" },
@@ -902,14 +910,7 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
     ? [...pieTop, { name: "Others", value: othersVal, color: "#CBD5E1", id: "others" }]
     : pieTop;
 
-  // ── Chart styles ─────────────────────────────────────────────────────────────
-  const chartCard = {
-    background: T.white, border: `1px solid ${T.border}`,
-    borderRadius: 14, padding: "20px 20px 12px",
-    boxShadow: "0 1px 3px rgba(0,0,0,.04)",
-  };
-  const chartTitle = { margin: "0 0 4px", fontSize: 13, fontWeight: 700, color: T.ink };
-  const chartSub   = { margin: "0 0 16px", fontSize: 11, color: T.inkL };
+  // ── Chart styles (chartCard/chartTitle/chartSub defined at module level) ─────
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
@@ -1090,7 +1091,19 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
         </div>
       </div>
 
-      {/* Row 3: Campus Split */}
+      {/* Row 3: Counsellor Performance */}
+      <div style={{ marginTop: 16 }}>
+        <CounsellorDashboard
+          counsellors={counsellors}
+          config={config}
+          allActuals={allActuals}
+          getActual={getActual}
+          getActualByCounsellor={getActualByCounsellor}
+          T={T}
+        />
+      </div>
+
+      {/* Row 4: Campus Split */}
       {campusData.length > 0 && (
         <div style={{ ...chartCard }}>
           <p style={chartTitle}>Campus Distribution</p>
@@ -1137,17 +1150,6 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
       <p style={{ margin: "16px 0 0", fontSize: 11, color: T.inkL, textAlign: "center" }}>
         Click any bar to cross-filter · Click again to clear · Use chips above to clear filters
       </p>
-
-      <div style={{ marginTop: 16 }}>
-        <CounsellorDashboard
-          counsellors={counsellors}
-          config={config}
-          allActuals={allActuals}
-          getActual={getActual}
-          getActualByCounsellor={getActualByCounsellor}
-          T={T}
-        />
-      </div>
     </div>
   );
 }
@@ -1536,78 +1538,77 @@ function PasscodeModal({ onSuccess, onClose }) {
 
 // ── COUNSELLOR DASHBOARD ──────────────────────────────────────────────────────
 function CounsellorDashboard({ counsellors, config, allActuals, getActual, getActualByCounsellor, T }) {
-  const [expandedCounsellor, setExpandedCounsellor] = useState(null);
-
   const leaderboard = counsellors.map(cn => {
-    const total = config.reduce((sum, uni) => {
+    const byUni = {};
+    let total = 0;
+    config.forEach(uni => {
       const c1k = uni.campus1.key, c2k = uni.campus2?.key;
-      const sections = ["core", "other"];
-      return sum + sections.reduce((s2, sec) => {
+      let uniTotal = 0;
+      ["core", "other"].forEach(sec => {
         const courses = sec === "core" ? uni.coreCourses : (uni.otherCourses || []);
-        return s2 + courses.reduce((s3, c) => {
+        courses.forEach(c => {
           const name = typeof c === "string" ? c : c.name;
-          return s3 + getActualByCounsellor(allActuals, uni.id, sec, name, c1k, cn)
-                    + (c2k ? getActualByCounsellor(allActuals, uni.id, sec, name, c2k, cn) : 0);
-        }, 0);
-      }, 0);
-    }, 0);
-
-    const byUni = config.map(uni => {
-      const c1k = uni.campus1.key, c2k = uni.campus2?.key;
-      const sections = ["core", "other"];
-      const uTotal = sections.reduce((s2, sec) => {
-        const courses = sec === "core" ? uni.coreCourses : (uni.otherCourses || []);
-        return s2 + courses.reduce((s3, c) => {
-          const name = typeof c === "string" ? c : c.name;
-          return s3 + getActualByCounsellor(allActuals, uni.id, sec, name, c1k, cn)
-                    + (c2k ? getActualByCounsellor(allActuals, uni.id, sec, name, c2k, cn) : 0);
-        }, 0);
-      }, 0);
-      return { id: uni.id, name: uni.shortName, color: uni.color, total: uTotal };
-    }).filter(u => u.total > 0);
-
+          uniTotal += getActualByCounsellor(allActuals, uni.id, sec, name, c1k, cn);
+          if (c2k) uniTotal += getActualByCounsellor(allActuals, uni.id, sec, name, c2k, cn);
+        });
+      });
+      if (uniTotal > 0) { byUni[uni.id] = uniTotal; total += uniTotal; }
+    });
     return { name: cn, total, byUni };
   }).filter(c => c.total > 0).sort((a, b) => b.total - a.total);
 
-  const maxTotal = leaderboard[0]?.total || 1;
+  if (leaderboard.length === 0) return (
+    <div style={{ ...chartCard }}>
+      <p style={chartTitle}>Counsellor Performance</p>
+      <p style={chartSub}>No attributed deposits yet</p>
+    </div>
+  );
+
+  const activeUnis = config.filter(uni => leaderboard.some(c => c.byUni[uni.id] > 0));
+  const chartData = leaderboard.map(c => ({ name: c.name, total: c.total, ...c.byUni }));
+  const chartHeight = Math.max(leaderboard.length * 48 + 60, 120);
+
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (!active || !payload?.length) return null;
+    const entry = leaderboard.find(c => c.name === label);
+    return (
+      <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, padding: "10px 14px", fontSize: 12 }}>
+        <p style={{ fontWeight: 700, color: T.ink, marginBottom: 6 }}>{label} — {entry?.total} total</p>
+        {payload.filter(p => p.value > 0).map((p, i) => (
+          <p key={i} style={{ color: p.fill, margin: "2px 0" }}>{p.name}: <strong>{p.value}</strong></p>
+        ))}
+      </div>
+    );
+  };
 
   return (
-    <div style={{ padding: "24px 32px" }}>
-      <p style={{ fontSize: 20, fontWeight: 700, color: T.ink, marginBottom: 4 }}>Counsellor Performance</p>
-      <p style={{ fontSize: 12, color: T.inkM, marginBottom: 24 }}>Total deposits attributed per counsellor across all universities</p>
-      {leaderboard.length === 0 && (
-        <p style={{ fontSize: 13, color: T.inkL, textAlign: "center", padding: "40px 0" }}>No counsellor data yet. Enter deposits with counsellor attribution to see results here.</p>
-      )}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {leaderboard.map((cn, i) => (
-          <div key={cn.name} style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 10, overflow: "hidden" }}>
-            <div onClick={() => setExpandedCounsellor(prev => prev === cn.name ? null : cn.name)}
-              style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", cursor: "pointer" }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: T.inkL, width: 24, flexShrink: 0 }}>#{i + 1}</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: T.ink, width: 200, flexShrink: 0 }}>{cn.name}</span>
-              <div style={{ flex: 1, background: T.bg, borderRadius: "0 4px 4px 0", height: 20, overflow: "hidden" }}>
-                <div style={{ width: `${Math.round(cn.total / maxTotal * 100)}%`, height: "100%", background: T.purple, borderRadius: "0 4px 4px 0", transition: "width .4s" }} />
-              </div>
-              <span style={{ fontSize: 14, fontWeight: 700, color: T.purple, fontFamily: "ui-monospace, monospace", width: 36, textAlign: "right", flexShrink: 0 }}>{cn.total}</span>
-              <span style={{ fontSize: 10, color: T.inkL, flexShrink: 0 }}>{expandedCounsellor === cn.name ? "▲" : "▼"}</span>
-            </div>
-            {expandedCounsellor === cn.name && (
-              <div style={{ borderTop: `1px solid ${T.border}`, padding: "10px 16px 12px 56px", display: "flex", flexDirection: "column", gap: 5 }}>
-                {cn.byUni.map(u => (
-                  <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: 99, background: u.color, flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, color: T.inkM, width: 160 }}>{u.name}</span>
-                    <div style={{ flex: 1, background: T.bg, borderRadius: "0 4px 4px 0", height: 12, overflow: "hidden" }}>
-                      <div style={{ width: `${Math.round(u.total / cn.total * 100)}%`, height: "100%", background: u.color, borderRadius: "0 4px 4px 0" }} />
-                    </div>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: u.color, fontFamily: "ui-monospace, monospace", width: 28, textAlign: "right" }}>{u.total}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+    <div style={{ ...chartCard }}>
+      <p style={chartTitle}>Counsellor Performance</p>
+      <p style={chartSub}>Deposits per counsellor split by university</p>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", marginBottom: 12 }}>
+        {activeUnis.map(u => (
+          <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <div style={{ width: 10, height: 10, borderRadius: 2, background: u.color }} />
+            <span style={{ fontSize: 11, color: T.inkM }}>{u.shortName}</span>
           </div>
         ))}
       </div>
+      <ResponsiveContainer width="100%" height={chartHeight}>
+        <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 48, left: 4, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={T.border} horizontal={false} />
+          <XAxis type="number" tick={{ fontSize: 10, fill: T.inkL }} axisLine={false} tickLine={false} />
+          <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11, fill: T.inkM }} axisLine={false} tickLine={false} />
+          <Tooltip content={<CustomTooltip />} />
+          {activeUnis.map((uni, i) => (
+            <RBar key={uni.id} dataKey={uni.id} name={uni.shortName} stackId="stack"
+              fill={uni.color} radius={i === activeUnis.length - 1 ? [0, 4, 4, 0] : [0, 0, 0, 0]}>
+              {i === activeUnis.length - 1 && (
+                <LabelList dataKey="total" position="right" style={{ fontSize: 11, fill: T.inkM, fontWeight: 600 }} />
+              )}
+            </RBar>
+          ))}
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
