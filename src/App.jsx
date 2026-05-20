@@ -874,6 +874,11 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
         c1Total += getActual(allActuals, uni.id, "core", name, c1Key);
         c2Total += getActual(allActuals, uni.id, "core", name, c2Key);
       });
+      (uni.otherCourses || []).forEach(c => {
+        const name = typeof c === "string" ? c : c.name;
+        c1Total += getActual(allActuals, uni.id, "other", name, c1Key);
+        c2Total += getActual(allActuals, uni.id, "other", name, c2Key);
+      });
       return {
         name: uni.shortName,
         c1: uni.campus1.label,
@@ -1089,7 +1094,7 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
       {campusData.length > 0 && (
         <div style={{ ...chartCard }}>
           <p style={chartTitle}>Campus Distribution</p>
-          <p style={chartSub}>Core course deposits split by campus</p>
+          <p style={chartSub}>All deposits split by campus</p>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={campusData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false} />
