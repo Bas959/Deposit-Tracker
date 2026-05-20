@@ -2061,10 +2061,14 @@ export default function App() {
                   )}
 
                   <div>
-                    <label style={labelStyle}>Number of Deposits</label>
-                    <input type="number" min="1" value={depositForm.count}
-                      onChange={e => sel("count", Math.max(1, parseInt(e.target.value) || 1))}
-                      style={{ ...selectStyle, width: 100 }} />
+                    <label style={labelStyle}>Deposits</label>
+                    <div style={{ display: "flex", alignItems: "center", gap: 0, border: `1.5px solid ${T.border}`, borderRadius: 8, overflow: "hidden", width: "fit-content" }}>
+                      <button onClick={() => sel("count", Math.max(1, depositForm.count - 1))}
+                        style={{ padding: "8px 14px", background: T.bg, border: "none", cursor: "pointer", fontSize: 16, color: T.inkM, fontFamily: "inherit", borderRight: `1px solid ${T.border}` }}>−</button>
+                      <span style={{ padding: "8px 20px", fontSize: 14, fontWeight: 700, color: T.ink, fontFamily: "ui-monospace, monospace", minWidth: 48, textAlign: "center" }}>{depositForm.count}</span>
+                      <button onClick={() => sel("count", depositForm.count + 1)}
+                        style={{ padding: "8px 14px", background: T.bg, border: "none", cursor: "pointer", fontSize: 16, color: T.inkM, fontFamily: "inherit", borderLeft: `1px solid ${T.border}` }}>+</button>
+                    </div>
                   </div>
                 </div>
 
