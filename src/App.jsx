@@ -958,8 +958,8 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
             {filterCourse ? `Showing deposits for "${filterCourse}"` : uniBarDisplay.length < allUniData.length ? `Showing ${uniBarDisplay.length} universities with deposits` : "Click a bar to filter the Courses chart"}
           </p>
           {(() => {
-            const primary = uniBarDisplay.filter(u => config.find(c => c.id === u.id)?.hasTargets);
-            const others  = uniBarDisplay.filter(u => !config.find(c => c.id === u.id)?.hasTargets);
+            const primary = uniBarDisplay.filter(u => PRIMARY_UNI_IDS.includes(u.id));
+            const others  = uniBarDisplay.filter(u => !PRIMARY_UNI_IDS.includes(u.id));
             const maxVal  = uniBarDisplay[0]?.value || 1;
 
             const BarRow = ({ entry }) => (
