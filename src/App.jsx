@@ -1153,7 +1153,7 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
 }
 
 // ── COURSE MANAGER PANEL ──────────────────────────────────────────────────────
-function CourseManager({ config, onSave, onClose, counsellors, setCounsellors }) {
+function CourseManager({ config, onSave, onClose, counsellors, setCounsellors, embedded = false }) {
   const [draft, setDraft]         = useState(JSON.parse(JSON.stringify(config)));
   const [activeUni, setActiveUni] = useState(draft[0]?.id || "");
   const [newCourse, setNewCourse] = useState({ name: "", section: "core", targets: {} });
@@ -1200,7 +1200,7 @@ function CourseManager({ config, onSave, onClose, counsellors, setCounsellors })
     setSaving(true);
     await onSave(draft);
     setSaving(false);
-    onClose();
+    onClose?.();
   };
 
   const inp = (val, onChange, placeholder = "") => (
@@ -1208,9 +1208,8 @@ function CourseManager({ config, onSave, onClose, counsellors, setCounsellors })
       style={{ padding: "7px 10px", border: `1px solid ${T.border}`, borderRadius: 7, fontSize: 13, outline: "none", fontFamily: "inherit", width: "100%", color: T.ink, background: T.white }} />
   );
 
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(22,17,43,.55)", backdropFilter: "blur(8px)", zIndex: 998, display: "flex", alignItems: "flex-start", justifyContent: "flex-end" }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width: 560, height: "100vh", background: T.white, boxShadow: "-4px 0 32px rgba(0,0,0,.12)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+  const inner = (
+    <div style={{ display: "flex", flexDirection: "column", ...(embedded ? { flex: 1, overflow: "hidden" } : { width: 560, height: "100vh", background: T.white, boxShadow: "-4px 0 32px rgba(0,0,0,.12)", overflow: "hidden" }) }}>
 
         {/* Header */}
         <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
@@ -1222,7 +1221,7 @@ function CourseManager({ config, onSave, onClose, counsellors, setCounsellors })
             <button onClick={handleSave} disabled={saving} style={{ padding: "8px 18px", background: T.purple, color: T.white, border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "inherit" }}>
               {saving ? "Saving…" : "Save Changes"}
             </button>
-            <button onClick={onClose} style={{ padding: "8px 12px", background: T.bg, color: T.inkM, border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>✕</button>
+            {!embedded && <button onClick={onClose} style={{ padding: "8px 12px", background: T.bg, color: T.inkM, border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>✕</button>}
           </div>
         </div>
 
@@ -1503,6 +1502,11 @@ function CourseManager({ config, onSave, onClose, counsellors, setCounsellors })
       </div>
     </div>
   );
+  return embedded ? inner : (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(22,17,43,.55)", backdropFilter: "blur(8px)", zIndex: 998, display: "flex", alignItems: "flex-start", justifyContent: "flex-end" }} onClick={onClose}>
+      {inner}
+    </div>
+  );
 }
 
 // ── PASSCODE MODAL ────────────────────────────────────────────────────────────
@@ -1610,7 +1614,7 @@ function CounsellorDashboard({ counsellors, config, allActuals, getActual, getAc
 }
 
 // ── DATA MANAGER ──────────────────────────────────────────────────────────────
-function DataManager({ config, allActuals, setAllActuals, onClose, scheduleSave }) {
+function DataManager({ config, allActuals, setAllActuals, onClose, scheduleSave, embedded = false }) {
   const [search, setSearch] = useState("");
   const [editKey, setEditKey] = useState(null);
   const [editVal, setEditVal] = useState("");
@@ -1668,20 +1672,15 @@ function DataManager({ config, allActuals, setAllActuals, onClose, scheduleSave 
   const thS = { padding: "10px 14px", fontSize: 11, fontWeight: 700, color: T.inkL, textTransform: "uppercase", letterSpacing: ".07em", textAlign: "left", borderBottom: `1.5px solid ${T.border}`, background: T.bg, position: "sticky", top: 0, zIndex: 1 };
   const tdS = { padding: "9px 14px", fontSize: 13, color: T.ink, borderBottom: `1px solid ${T.border}` };
 
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 300, display: "flex", justifyContent: "flex-end" }}
-      onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={{ width: "min(100vw, 980px)", height: "100%", background: T.white, display: "flex", flexDirection: "column", boxShadow: "-8px 0 40px rgba(0,0,0,.15)" }}>
-        <div style={{ padding: "20px 28px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+  const content = (
+    <div style={{ display: "flex", flexDirection: "column", ...(embedded ? { flex: 1, overflow: "hidden" } : { width: "min(100vw, 980px)", height: "100%", background: T.white, boxShadow: "-8px 0 40px rgba(0,0,0,.15)" }) }}>
+        <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
           <div>
-            <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: T.ink }}>Data Manager</p>
+            <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: T.ink }}>Data Manager</p>
             <p style={{ margin: "2px 0 0", fontSize: 12, color: T.inkM }}>{rows.length} entries across all universities</p>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <input placeholder="Search entries…" value={search} onChange={e => setSearch(e.target.value)}
-              style={{ padding: "8px 14px", border: `1.5px solid ${T.border}`, borderRadius: 8, fontSize: 13, fontFamily: "inherit", outline: "none", width: 220, color: T.ink }} />
-            <button onClick={onClose} style={{ background: "none", border: `1.5px solid ${T.border}`, borderRadius: 8, padding: "7px 14px", cursor: "pointer", fontSize: 13, color: T.inkM, fontFamily: "inherit" }}>✕ Close</button>
-          </div>
+          <input placeholder="Search entries…" value={search} onChange={e => setSearch(e.target.value)}
+            style={{ padding: "8px 14px", border: `1.5px solid ${T.border}`, borderRadius: 8, fontSize: 13, fontFamily: "inherit", outline: "none", width: 220, color: T.ink }} />
         </div>
         <div style={{ flex: 1, overflow: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -1733,6 +1732,145 @@ function DataManager({ config, allActuals, setAllActuals, onClose, scheduleSave 
           </table>
         </div>
       </div>
+  );
+  return embedded ? content : (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 300, display: "flex", justifyContent: "flex-end" }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      {content}
+    </div>
+  );
+}
+
+// ── ADMIN PANEL ───────────────────────────────────────────────────────────────
+function AdminPanel({ tab, setTab, config, setConfig, counsellors, setCounsellors, allActuals, setAllActuals, scheduleSave, onClose }) {
+  const fileRef = useRef(null);
+  const [importPreview, setImportPreview] = useState(null);
+  const [importData, setImportData] = useState(null);
+
+  const handleExport = () => {
+    const backup = { all_actuals: allActuals, course_config: config, counsellors, exported_at: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url;
+    a.download = `deposit-tracker-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.click(); URL.revokeObjectURL(url);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!data.all_actuals || !data.course_config) { alert("Invalid backup file."); return; }
+        let total = 0;
+        Object.values(data.all_actuals).forEach(uni =>
+          Object.values(uni).forEach(sec =>
+            Object.values(sec).forEach(course =>
+              Object.values(course).forEach(campus => {
+                if (typeof campus === "object") Object.values(campus).forEach(n => { total += n; });
+                else total += campus;
+              }))));
+        setImportPreview({ total, unis: data.course_config.length, exportedAt: data.exported_at || "Unknown" });
+        setImportData(data);
+      } catch { alert("Could not read file. Make sure it's a valid tracker export."); }
+    };
+    reader.readAsText(file); e.target.value = "";
+  };
+
+  const handleConfirmImport = () => {
+    setAllActuals(importData.all_actuals);
+    setConfig(importData.course_config);
+    if (Array.isArray(importData.counsellors)) setCounsellors(importData.counsellors);
+    scheduleSave();
+    setImportPreview(null); setImportData(null);
+  };
+
+  const tabBtn = (id, label) => (
+    <button onClick={() => setTab(id)} style={{ padding: "12px 20px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "inherit", background: "transparent", color: tab === id ? T.purple : T.inkM, borderBottom: `2px solid ${tab === id ? T.purple : "transparent"}`, transition: "all .15s" }}>
+      {label}
+    </button>
+  );
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.45)", zIndex: 200, display: "flex", justifyContent: "flex-end" }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ width: 920, background: T.white, height: "100%", display: "flex", flexDirection: "column", boxShadow: "-8px 0 32px rgba(0,0,0,.2)" }}>
+
+        <div style={{ padding: "16px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <p style={{ fontSize: 16, fontWeight: 700, color: T.ink, margin: 0 }}>Admin</p>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: T.inkL }}>✕</button>
+        </div>
+
+        <div style={{ display: "flex", borderBottom: `1px solid ${T.border}`, flexShrink: 0, background: T.bg }}>
+          {tabBtn("config", "🎓 Configuration")}
+          {tabBtn("data", "📋 Data")}
+          {tabBtn("backup", "💾 Backup")}
+        </div>
+
+        <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+
+          {tab === "config" && (
+            <CourseManager
+              config={config} onSave={(newConfig) => {
+                setConfig(newConfig);
+                scheduleSave();
+              }}
+              counsellors={counsellors} setCounsellors={setCounsellors}
+              embedded={true}
+            />
+          )}
+
+          {tab === "data" && (
+            <DataManager
+              allActuals={allActuals} setAllActuals={setAllActuals}
+              config={config}
+              onClose={onClose} scheduleSave={scheduleSave}
+              embedded={true}
+            />
+          )}
+
+          {tab === "backup" && (
+            <div style={{ padding: "32px", display: "flex", flexDirection: "column", gap: 32, overflowY: "auto" }}>
+              <div style={{ background: T.bg, borderRadius: 12, padding: "24px 28px", border: `1px solid ${T.border}` }}>
+                <p style={{ fontSize: 15, fontWeight: 700, color: T.ink, margin: "0 0 6px" }}>↓ Export backup</p>
+                <p style={{ fontSize: 13, color: T.inkM, margin: "0 0 16px" }}>Download a complete JSON snapshot of all deposits, universities, courses and counsellors. Save it somewhere safe after every major data entry session.</p>
+                <button onClick={handleExport}
+                  style={{ padding: "10px 22px", background: T.purple, color: T.white, border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "inherit" }}>
+                  ↓ Export now
+                </button>
+              </div>
+
+              <div style={{ background: T.bg, borderRadius: 12, padding: "24px 28px", border: `1px solid ${T.border}` }}>
+                <p style={{ fontSize: 15, fontWeight: 700, color: T.ink, margin: "0 0 6px" }}>↑ Restore from backup</p>
+                <p style={{ fontSize: 13, color: T.inkM, margin: "0 0 16px" }}>Upload a previously exported JSON file to fully restore the tracker. This overwrites all current data — only use a backup you trust.</p>
+                <input ref={fileRef} type="file" accept=".json" hidden onChange={handleFileChange} />
+                <button onClick={() => fileRef.current?.click()}
+                  style={{ padding: "10px 22px", background: T.white, color: T.inkM, border: `1.5px solid ${T.border}`, borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "inherit" }}>
+                  ↑ Choose backup file
+                </button>
+                {importPreview && (
+                  <div style={{ marginTop: 20, background: T.white, borderRadius: 10, padding: "18px 22px", border: `1.5px solid ${T.purple}40` }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: T.ink, margin: "0 0 8px" }}>Preview — ready to import</p>
+                    <p style={{ fontSize: 12, color: T.inkM, margin: "0 0 4px" }}>Exported: <strong>{importPreview.exportedAt}</strong></p>
+                    <p style={{ fontSize: 12, color: T.inkM, margin: "0 0 16px" }}>{importPreview.total} deposits · {importPreview.unis} universities</p>
+                    <div style={{ display: "flex", gap: 10 }}>
+                      <button onClick={handleConfirmImport}
+                        style={{ padding: "9px 20px", background: T.purple, color: T.white, border: "none", borderRadius: 7, cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "inherit" }}>
+                        Confirm restore
+                      </button>
+                      <button onClick={() => { setImportPreview(null); setImportData(null); }}
+                        style={{ padding: "9px 16px", background: T.bg, border: `1px solid ${T.border}`, borderRadius: 7, cursor: "pointer", fontSize: 13, fontFamily: "inherit", color: T.inkM }}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -1747,7 +1885,8 @@ export default function App() {
   const [subTab,      setSubTab]      = useState("core");
   const [editable,    setEditable]    = useState(false);
   const [showModal,   setShowModal]   = useState(false);
-  const [showManager, setShowManager] = useState(false);
+  const [showAdmin,   setShowAdmin]   = useState(false);
+  const [adminTab,    setAdminTab]    = useState("config");
   const [loading,     setLoading]     = useState(true);
   const [saving,      setSaving]      = useState(false);
   const [updatedAt,   setUpdatedAt]   = useState(null);
@@ -1755,7 +1894,6 @@ export default function App() {
   const [counsellors, setCounsellors] = useState([]);
   const [showAddDeposit, setShowAddDeposit] = useState(false);
   const [depositForm, setDepositForm] = useState({ counsellor: "", uniId: "", section: "core", courseName: "", campusKey: "", count: 1 });
-  const [showDataManager, setShowDataManager] = useState(false);
 
   const [showUniDropdown, setShowUniDropdown] = useState(false);
   const [showOthersBreakdown, setShowOthersBreakdown] = useState(false);
@@ -1943,8 +2081,7 @@ export default function App() {
 
   return (
     <>
-      {showModal    && <PasscodeModal onSuccess={() => { setEditable(true); setShowModal(false); }} onClose={() => setShowModal(false)} />}
-      {showManager  && <CourseManager config={config} onSave={handleSaveConfig} onClose={() => setShowManager(false)} counsellors={counsellors} setCounsellors={setCounsellors} />}
+      {showModal && <PasscodeModal onSuccess={() => { setEditable(true); setShowModal(false); }} onClose={() => setShowModal(false)} />}
 
       <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: T.bg, minHeight: "100vh" }}>
 
@@ -1975,21 +2112,9 @@ export default function App() {
             {saving ? <span style={{ fontSize: 11, color: T.inkL, fontStyle: "italic" }}>Saving…</span>
                     : updatedAt && <span style={{ fontSize: 11, color: T.inkL }}>Updated {updatedAt}</span>}
             {editable && (
-              <button onClick={() => {
-                const backup = { all_actuals: allActuals, course_config: config, counsellors, exported_at: new Date().toISOString() };
-                const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a"); a.href = url;
-                a.download = `deposit-tracker-backup-${new Date().toISOString().slice(0,10)}.json`;
-                a.click(); URL.revokeObjectURL(url);
-              }} style={{ padding: "8px 16px", background: T.white, border: `1.5px solid ${T.border}`, borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, color: T.inkM, fontFamily: "inherit" }}>
-                ↓ Export
-              </button>
-            )}
-            {editable && (
-              <button onClick={() => setShowDataManager(true)}
-                style={{ padding: "8px 14px", background: T.white, border: `1.5px solid ${T.border}`, borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, color: T.inkM, fontFamily: "inherit" }}>
-                📋 Data
+              <button onClick={() => { setShowAdmin(true); setAdminTab("config"); }}
+                style={{ padding: "8px 16px", background: T.white, border: `1.5px solid ${T.border}`, borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, color: T.ink, fontFamily: "inherit" }}>
+                ⚙ Admin
               </button>
             )}
             {editable && (
@@ -1998,7 +2123,6 @@ export default function App() {
                 + Add Deposit
               </button>
             )}
-            {editable && <button onClick={() => setShowManager(true)} style={{ background: T.purpleL, border: `1px solid ${T.purpleM}`, color: T.purple, padding: "8px 14px", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: "inherit" }}>⚙ Manage</button>}
             {editable
               ? <button onClick={() => setEditable(false)} style={{ background: T.green, border: "none", color: T.white, padding: "8px 18px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: "inherit" }}>🔓 Lock</button>
               : <button onClick={() => setShowModal(true)} style={{ background: T.purple, border: "none", color: T.white, padding: "8px 18px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: "inherit", transition: "background .15s" }}
@@ -2260,14 +2384,15 @@ export default function App() {
           );
         })()}
 
-        {/* DATA MANAGER */}
-        {showDataManager && (
-          <DataManager
-            config={config}
-            allActuals={allActuals}
-            setAllActuals={setAllActuals}
-            onClose={() => setShowDataManager(false)}
+        {/* ADMIN PANEL */}
+        {showAdmin && (
+          <AdminPanel
+            tab={adminTab} setTab={setAdminTab}
+            config={config} setConfig={setConfig}
+            counsellors={counsellors} setCounsellors={setCounsellors}
+            allActuals={allActuals} setAllActuals={setAllActuals}
             scheduleSave={scheduleSave}
+            onClose={() => setShowAdmin(false)}
           />
         )}
 
