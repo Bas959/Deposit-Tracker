@@ -862,23 +862,29 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
     });
 
   // 4. Campus split — unis with 2 campuses
-  const campusData = config.filter(u => u.campus2).map(uni => {
-    const c1Total = uni.coreCourses.reduce((s, c) => {
-      const name = typeof c === "string" ? c : c.name;
-      return s + getActual(allActuals, uni.id, "core", name, uni.campus1.key);
-    }, 0);
-    const c2Total = uni.coreCourses.reduce((s, c) => {
-      const name = typeof c === "string" ? c : c.name;
-      return s + getActual(allActuals, uni.id, "core", name, uni.campus2.key);
-    }, 0);
-    return {
-      name: uni.shortName,
-      [uni.campus1.label]: c1Total,
-      [uni.campus2.label]: c2Total,
-      c1Color: uni.campus1.color,
-      c2Color: uni.campus2.color,
-    };
-  });
+  const campusData = config
+    .filter(u => u.campus2)
+    .map(uni => {
+      const c1Key = uni.campus1.key;
+      const c2Key = uni.campus2.key;
+      let c1Total = 0;
+      let c2Total = 0;
+      uni.coreCourses.forEach(c => {
+        const name = typeof c === "string" ? c : c.name;
+        c1Total += getActual(allActuals, uni.id, "core", name, c1Key);
+        c2Total += getActual(allActuals, uni.id, "core", name, c2Key);
+      });
+      return {
+        name: uni.shortName,
+        c1: uni.campus1.label,
+        c2: uni.campus2.label,
+        c1Total,
+        c2Total,
+        c1Color: uni.campus1.color || T.purple,
+        c2Color: uni.campus2.color || T.teal,
+      };
+    })
+    .filter(u => u.c1Total + u.c2Total > 0);
 
   // 5. Pie data — university share
   const grandTotal = allUniData.reduce((s, u) => s + u.value, 0);
@@ -1091,17 +1097,14 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
               <YAxis tick={{ fontSize: 11, fill: T.inkL }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              {/* Dynamic bars for each campus label */}
-              {campusData.length > 0 && Object.keys(campusData[0])
-                .filter(k => k !== "name" && !k.endsWith("Color"))
-                .map((campusLabel, i) => (
-                  <RBar key={campusLabel} dataKey={campusLabel} stackId="a"
-                    fill={i === 0 ? (campusData[0]?.c1Color || T.purple) : (campusData[0]?.c2Color || T.teal)} radius={i === 0 ? [0, 0, 0, 0] : [6, 6, 0, 0]}>
-                    <LabelList dataKey={campusLabel} position="inside" style={{ fontSize: 10, fill: T.white, fontWeight: 600 }}
-                      formatter={v => v > 0 ? v : ""} />
-                  </RBar>
-                ))
-              }
+              <RBar dataKey="c1Total" stackId="s" name={campusData[0]?.c1 || "Campus 1"} radius={[0, 0, 0, 0]}>
+                {campusData.map((entry, i) => <Cell key={i} fill={entry.c1Color} />)}
+                <LabelList dataKey="c1Total" position="inside" style={{ fontSize: 11, fill: "#fff", fontWeight: 600 }} />
+              </RBar>
+              <RBar dataKey="c2Total" stackId="s" name={campusData[0]?.c2 || "Campus 2"} radius={[4, 4, 0, 0]}>
+                {campusData.map((entry, i) => <Cell key={i} fill={entry.c2Color} />)}
+                <LabelList dataKey="c2Total" position="inside" style={{ fontSize: 11, fill: "#fff", fontWeight: 600 }} />
+              </RBar>
             </BarChart>
           </ResponsiveContainer>
         </div>
