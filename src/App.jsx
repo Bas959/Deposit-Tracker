@@ -491,7 +491,8 @@ const TC = { textAlign: "center" };
 const TD = { padding: "10px 14px", verticalAlign: "middle", fontSize: 13, borderBottom: `1px solid ${T.bg}` };
 
 // ── DYNAMIC COURSE TABLE (with targets) ───────────────────────────────────────
-function CourseTable({ uni, allActuals, onUpdate, editable }) {
+function CourseTable({ uni, allActuals, onUpdate, editable, counsellors, getActualByCounsellor, setActualByCounsellor, setAllActuals, scheduleSave }) {
+  const [expandedCell, setExpandedCell] = useState(null);
   const c1 = uni.campus1, c2 = uni.campus2;
   const courses = uni.coreCourses;
 
@@ -539,19 +540,79 @@ function CourseTable({ uni, allActuals, onUpdate, editable }) {
                 <td style={{ ...TD, ...TC, background: bg1, borderLeft: `2px solid ${c1.color}30` }}>
                   <Num value={c.targets?.[c1.key] ?? ""} accent={c1.color} onChange={() => {}} readOnly={true} />
                 </td>
-                <td style={{ ...TD, ...TC, background: bg1 }}>
-                  <Num value={getActual(allActuals, uni.id, "core", c.name, c1.key) || ""} accent={c1.color}
-                    onChange={v => onUpdate(setActual(allActuals, uni.id, "core", c.name, c1.key, v))}
-                    readOnly={!editable} />
+                <td style={{ ...TD, ...TC, background: bg1, verticalAlign: "top" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <div style={{ display: "flex", alignItems: "center", background: T.bg, border: `1px solid ${T.border}`, borderRadius: 6, overflow: "hidden" }}>
+                        <span style={{ padding: "4px 8px", fontSize: 13, fontWeight: 700, color: T.purple, minWidth: 28, textAlign: "center" }}>{la}</span>
+                        {editable && (
+                          <button onClick={() => setExpandedCell(prev => prev === `${c.name}__${c1.key}` ? null : `${c.name}__${c1.key}`)}
+                            style={{ padding: "4px 6px", background: expandedCell === `${c.name}__${c1.key}` ? T.purple : "transparent", border: "none", borderLeft: `1px solid ${T.border}`, cursor: "pointer", fontSize: 9, color: expandedCell === `${c.name}__${c1.key}` ? T.white : T.inkL }}>
+                            {expandedCell === `${c.name}__${c1.key}` ? "▲" : "▼"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {editable && expandedCell === `${c.name}__${c1.key}` && (
+                      <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 5, minWidth: 160, zIndex: 10 }}>
+                        {["Unattributed", ...counsellors].map(cn => {
+                          const v = getActualByCounsellor(allActuals, uni.id, "core", c.name, c1.key, cn);
+                          return (
+                            <div key={cn} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{ fontSize: 10, color: T.inkM, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cn}</span>
+                              <input type="number" min="0" value={v || ""} placeholder="0"
+                                onChange={e => setAllActuals(prev => setActualByCounsellor(prev, uni.id, "core", c.name, c1.key, cn, ni(e.target.value)))}
+                                onBlur={scheduleSave}
+                                style={{ width: 44, padding: "3px 5px", border: `1px solid ${T.border}`, borderRadius: 5, fontSize: 12, fontFamily: "ui-monospace, monospace", textAlign: "center" }} />
+                            </div>
+                          );
+                        })}
+                        <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 4, display: "flex", justifyContent: "space-between" }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: T.inkM }}>Total</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: T.purple, fontFamily: "ui-monospace, monospace" }}>{la}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </td>
                 {c2 && <>
                   <td style={{ ...TD, ...TC, background: bg2, borderLeft: `2px solid ${c2.color}30` }}>
                     <Num value={c.targets?.[c2.key] ?? ""} accent={c2.color} onChange={() => {}} readOnly={true} />
                   </td>
-                  <td style={{ ...TD, ...TC, background: bg2 }}>
-                    <Num value={getActual(allActuals, uni.id, "core", c.name, c2.key) || ""} accent={c2.color}
-                      onChange={v => onUpdate(setActual(allActuals, uni.id, "core", c.name, c2.key, v))}
-                      readOnly={!editable} />
+                  <td style={{ ...TD, ...TC, background: bg2, verticalAlign: "top" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <div style={{ display: "flex", alignItems: "center", background: T.bg, border: `1px solid ${T.border}`, borderRadius: 6, overflow: "hidden" }}>
+                          <span style={{ padding: "4px 8px", fontSize: 13, fontWeight: 700, color: T.purple, minWidth: 28, textAlign: "center" }}>{sa}</span>
+                          {editable && (
+                            <button onClick={() => setExpandedCell(prev => prev === `${c.name}__${c2.key}` ? null : `${c.name}__${c2.key}`)}
+                              style={{ padding: "4px 6px", background: expandedCell === `${c.name}__${c2.key}` ? T.purple : "transparent", border: "none", borderLeft: `1px solid ${T.border}`, cursor: "pointer", fontSize: 9, color: expandedCell === `${c.name}__${c2.key}` ? T.white : T.inkL }}>
+                              {expandedCell === `${c.name}__${c2.key}` ? "▲" : "▼"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {editable && expandedCell === `${c.name}__${c2.key}` && (
+                        <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 5, minWidth: 160, zIndex: 10 }}>
+                          {["Unattributed", ...counsellors].map(cn => {
+                            const v = getActualByCounsellor(allActuals, uni.id, "core", c.name, c2.key, cn);
+                            return (
+                              <div key={cn} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <span style={{ fontSize: 10, color: T.inkM, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cn}</span>
+                                <input type="number" min="0" value={v || ""} placeholder="0"
+                                  onChange={e => setAllActuals(prev => setActualByCounsellor(prev, uni.id, "core", c.name, c2.key, cn, ni(e.target.value)))}
+                                  onBlur={scheduleSave}
+                                  style={{ width: 44, padding: "3px 5px", border: `1px solid ${T.border}`, borderRadius: 5, fontSize: 12, fontFamily: "ui-monospace, monospace", textAlign: "center" }} />
+                              </div>
+                            );
+                          })}
+                          <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 4, display: "flex", justifyContent: "space-between" }}>
+                            <span style={{ fontSize: 10, fontWeight: 700, color: T.inkM }}>Total</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: T.purple, fontFamily: "ui-monospace, monospace" }}>{sa}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </td>
                 </>}
                 <td style={{ ...TD, ...TC, fontWeight: 600, color: T.inkM, borderLeft: `1.5px solid ${T.border}`, fontFamily: "ui-monospace, monospace" }}>{tgt || "—"}</td>
@@ -592,7 +653,8 @@ function CourseTable({ uni, allActuals, onUpdate, editable }) {
 }
 
 // ── OTHER COURSES TABLE ────────────────────────────────────────────────────────
-function OtherTable({ uni, allActuals, onUpdate, editable }) {
+function OtherTable({ uni, allActuals, onUpdate, editable, counsellors, getActualByCounsellor, setActualByCounsellor, setAllActuals, scheduleSave }) {
+  const [expandedCell, setExpandedCell] = useState(null);
   const c1 = uni.campus1, c2 = uni.campus2;
   const courses = uni.otherCourses || [];
   const tot1 = courses.reduce((s, c) => s + getActual(allActuals, uni.id, "other", c, c1.key), 0);
@@ -625,11 +687,75 @@ function OtherTable({ uni, allActuals, onUpdate, editable }) {
                 onMouseLeave={e => e.currentTarget.style.background = i % 2 ? T.bg : T.white}
               >
                 <td style={{ ...TD, fontWeight: 500, color: T.ink }}>{c}</td>
-                <td style={{ ...TD, ...TC, background: c1.bg || "#FAF7FF", borderLeft: `2px solid ${c1.color}30` }}>
-                  <Num value={v1 || ""} accent={c1.color} onChange={v => onUpdate(setActual(allActuals, uni.id, "other", c, c1.key, v))} readOnly={!editable} />
+                <td style={{ ...TD, ...TC, background: c1.bg || "#FAF7FF", borderLeft: `2px solid ${c1.color}30`, verticalAlign: "top" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <div style={{ display: "flex", alignItems: "center", background: T.bg, border: `1px solid ${T.border}`, borderRadius: 6, overflow: "hidden" }}>
+                        <span style={{ padding: "4px 8px", fontSize: 13, fontWeight: 700, color: T.purple, minWidth: 28, textAlign: "center" }}>{v1}</span>
+                        {editable && (
+                          <button onClick={() => setExpandedCell(prev => prev === `${c}__${c1.key}` ? null : `${c}__${c1.key}`)}
+                            style={{ padding: "4px 6px", background: expandedCell === `${c}__${c1.key}` ? T.purple : "transparent", border: "none", borderLeft: `1px solid ${T.border}`, cursor: "pointer", fontSize: 9, color: expandedCell === `${c}__${c1.key}` ? T.white : T.inkL }}>
+                            {expandedCell === `${c}__${c1.key}` ? "▲" : "▼"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {editable && expandedCell === `${c}__${c1.key}` && (
+                      <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 5, minWidth: 160, zIndex: 10 }}>
+                        {["Unattributed", ...counsellors].map(cn => {
+                          const v = getActualByCounsellor(allActuals, uni.id, "other", c, c1.key, cn);
+                          return (
+                            <div key={cn} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{ fontSize: 10, color: T.inkM, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cn}</span>
+                              <input type="number" min="0" value={v || ""} placeholder="0"
+                                onChange={e => setAllActuals(prev => setActualByCounsellor(prev, uni.id, "other", c, c1.key, cn, ni(e.target.value)))}
+                                onBlur={scheduleSave}
+                                style={{ width: 44, padding: "3px 5px", border: `1px solid ${T.border}`, borderRadius: 5, fontSize: 12, fontFamily: "ui-monospace, monospace", textAlign: "center" }} />
+                            </div>
+                          );
+                        })}
+                        <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 4, display: "flex", justifyContent: "space-between" }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: T.inkM }}>Total</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: T.purple, fontFamily: "ui-monospace, monospace" }}>{v1}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </td>
-                {c2 && <td style={{ ...TD, ...TC, background: c2.bg || "#F0FAFF", borderLeft: `2px solid ${c2.color}30` }}>
-                  <Num value={v2 || ""} accent={c2.color} onChange={v => onUpdate(setActual(allActuals, uni.id, "other", c, c2.key, v))} readOnly={!editable} />
+                {c2 && <td style={{ ...TD, ...TC, background: c2.bg || "#F0FAFF", borderLeft: `2px solid ${c2.color}30`, verticalAlign: "top" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <div style={{ display: "flex", alignItems: "center", background: T.bg, border: `1px solid ${T.border}`, borderRadius: 6, overflow: "hidden" }}>
+                        <span style={{ padding: "4px 8px", fontSize: 13, fontWeight: 700, color: T.purple, minWidth: 28, textAlign: "center" }}>{v2}</span>
+                        {editable && (
+                          <button onClick={() => setExpandedCell(prev => prev === `${c}__${c2.key}` ? null : `${c}__${c2.key}`)}
+                            style={{ padding: "4px 6px", background: expandedCell === `${c}__${c2.key}` ? T.purple : "transparent", border: "none", borderLeft: `1px solid ${T.border}`, cursor: "pointer", fontSize: 9, color: expandedCell === `${c}__${c2.key}` ? T.white : T.inkL }}>
+                            {expandedCell === `${c}__${c2.key}` ? "▲" : "▼"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {editable && expandedCell === `${c}__${c2.key}` && (
+                      <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, padding: "8px 10px", display: "flex", flexDirection: "column", gap: 5, minWidth: 160, zIndex: 10 }}>
+                        {["Unattributed", ...counsellors].map(cn => {
+                          const v = getActualByCounsellor(allActuals, uni.id, "other", c, c2.key, cn);
+                          return (
+                            <div key={cn} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{ fontSize: 10, color: T.inkM, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cn}</span>
+                              <input type="number" min="0" value={v || ""} placeholder="0"
+                                onChange={e => setAllActuals(prev => setActualByCounsellor(prev, uni.id, "other", c, c2.key, cn, ni(e.target.value)))}
+                                onBlur={scheduleSave}
+                                style={{ width: 44, padding: "3px 5px", border: `1px solid ${T.border}`, borderRadius: 5, fontSize: 12, fontFamily: "ui-monospace, monospace", textAlign: "center" }} />
+                            </div>
+                          );
+                        })}
+                        <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: 4, display: "flex", justifyContent: "space-between" }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: T.inkM }}>Total</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: T.purple, fontFamily: "ui-monospace, monospace" }}>{v2}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </td>}
                 <td style={{ ...TD, ...TC, fontWeight: 700, fontSize: 15, color: v1 + v2 > 0 ? T.ink : T.border, borderLeft: `1.5px solid ${T.border}`, fontFamily: "ui-monospace, monospace" }}>{v1 + v2 || "—"}</td>
               </tr>
@@ -1361,6 +1487,84 @@ function PasscodeModal({ onSuccess, onClose }) {
   );
 }
 
+// ── COUNSELLOR DASHBOARD ──────────────────────────────────────────────────────
+function CounsellorDashboard({ counsellors, config, allActuals, getActual, getActualByCounsellor, T }) {
+  const [expandedCounsellor, setExpandedCounsellor] = useState(null);
+
+  const leaderboard = counsellors.map(cn => {
+    const total = config.reduce((sum, uni) => {
+      const c1k = uni.campus1.key, c2k = uni.campus2?.key;
+      const sections = ["core", "other"];
+      return sum + sections.reduce((s2, sec) => {
+        const courses = sec === "core" ? uni.coreCourses : (uni.otherCourses || []);
+        return s2 + courses.reduce((s3, c) => {
+          const name = typeof c === "string" ? c : c.name;
+          return s3 + getActualByCounsellor(allActuals, uni.id, sec, name, c1k, cn)
+                    + (c2k ? getActualByCounsellor(allActuals, uni.id, sec, name, c2k, cn) : 0);
+        }, 0);
+      }, 0);
+    }, 0);
+
+    const byUni = config.map(uni => {
+      const c1k = uni.campus1.key, c2k = uni.campus2?.key;
+      const sections = ["core", "other"];
+      const uTotal = sections.reduce((s2, sec) => {
+        const courses = sec === "core" ? uni.coreCourses : (uni.otherCourses || []);
+        return s2 + courses.reduce((s3, c) => {
+          const name = typeof c === "string" ? c : c.name;
+          return s3 + getActualByCounsellor(allActuals, uni.id, sec, name, c1k, cn)
+                    + (c2k ? getActualByCounsellor(allActuals, uni.id, sec, name, c2k, cn) : 0);
+        }, 0);
+      }, 0);
+      return { id: uni.id, name: uni.shortName, color: uni.color, total: uTotal };
+    }).filter(u => u.total > 0);
+
+    return { name: cn, total, byUni };
+  }).filter(c => c.total > 0).sort((a, b) => b.total - a.total);
+
+  const maxTotal = leaderboard[0]?.total || 1;
+
+  return (
+    <div style={{ padding: "24px 32px" }}>
+      <p style={{ fontSize: 20, fontWeight: 700, color: T.ink, marginBottom: 4 }}>Counsellor Performance</p>
+      <p style={{ fontSize: 12, color: T.inkM, marginBottom: 24 }}>Total deposits attributed per counsellor across all universities</p>
+      {leaderboard.length === 0 && (
+        <p style={{ fontSize: 13, color: T.inkL, textAlign: "center", padding: "40px 0" }}>No counsellor data yet. Enter deposits with counsellor attribution to see results here.</p>
+      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {leaderboard.map((cn, i) => (
+          <div key={cn.name} style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 10, overflow: "hidden" }}>
+            <div onClick={() => setExpandedCounsellor(prev => prev === cn.name ? null : cn.name)}
+              style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", cursor: "pointer" }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: T.inkL, width: 24, flexShrink: 0 }}>#{i + 1}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: T.ink, width: 200, flexShrink: 0 }}>{cn.name}</span>
+              <div style={{ flex: 1, background: T.bg, borderRadius: "0 4px 4px 0", height: 20, overflow: "hidden" }}>
+                <div style={{ width: `${Math.round(cn.total / maxTotal * 100)}%`, height: "100%", background: T.purple, borderRadius: "0 4px 4px 0", transition: "width .4s" }} />
+              </div>
+              <span style={{ fontSize: 14, fontWeight: 700, color: T.purple, fontFamily: "ui-monospace, monospace", width: 36, textAlign: "right", flexShrink: 0 }}>{cn.total}</span>
+              <span style={{ fontSize: 10, color: T.inkL, flexShrink: 0 }}>{expandedCounsellor === cn.name ? "▲" : "▼"}</span>
+            </div>
+            {expandedCounsellor === cn.name && (
+              <div style={{ borderTop: `1px solid ${T.border}`, padding: "10px 16px 12px 56px", display: "flex", flexDirection: "column", gap: 5 }}>
+                {cn.byUni.map(u => (
+                  <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: 99, background: u.color, flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, color: T.inkM, width: 160 }}>{u.name}</span>
+                    <div style={{ flex: 1, background: T.bg, borderRadius: "0 4px 4px 0", height: 12, overflow: "hidden" }}>
+                      <div style={{ width: `${Math.round(u.total / cn.total * 100)}%`, height: "100%", background: u.color, borderRadius: "0 4px 4px 0" }} />
+                    </div>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: u.color, fontFamily: "ui-monospace, monospace", width: 28, textAlign: "right" }}>{u.total}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── APP ───────────────────────────────────────────────────────────────────────
 export default function App() {
   const [config,      setConfig]      = useState([]);
@@ -1672,6 +1876,10 @@ export default function App() {
               📊 Dashboard
             </button>
             {config.filter(u => u.hasTargets).map(u => uniTab(u, activeView === u.id))}
+            <button onClick={() => setActiveView("counsellors")}
+              style={{ padding: "12px 18px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "inherit", borderRadius: "10px 10px 0 0", background: activeView === "counsellors" ? T.white : "transparent", color: activeView === "counsellors" ? T.purple : T.inkL, borderBottom: activeView === "counsellors" ? `3px solid ${T.purple}` : "3px solid transparent", transition: "all .15s" }}>
+              👥 Counsellors
+            </button>
             {(() => {
               const others = config.filter(u => !u.hasTargets);
               if (!others.length) return null;
@@ -1704,8 +1912,15 @@ export default function App() {
             </div>
           )}
 
+          {/* COUNSELLORS VIEW */}
+          {activeView === "counsellors" && (
+            <div style={{ background: T.white, borderRadius: "0 12px 12px 12px", border: `1px solid ${T.border}`, borderTop: "none", boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
+              <CounsellorDashboard counsellors={counsellors} config={config} allActuals={allActuals} getActual={getActual} getActualByCounsellor={getActualByCounsellor} T={T} />
+            </div>
+          )}
+
           {/* UNIVERSITY TABLE VIEW */}
-          {activeView !== "dashboard" && (() => {
+          {activeView !== "dashboard" && activeView !== "counsellors" && (() => {
             const activeUniObj = config.find(u => u.id === activeView);
             if (!activeUniObj) return null;
             return (
@@ -1720,13 +1935,13 @@ export default function App() {
                   <span style={{ fontSize: 11, color: T.inkL, background: `${activeUniObj.color}15`, padding: "4px 10px", borderRadius: 99, fontWeight: 600, border: `1px solid ${activeUniObj.color}30` }}>{activeUniObj.intakeLabel}</span>
                 </div>
                 {activeUniObj.hasTargets && subTab === "core" && (
-                  <CourseTable uni={activeUniObj} allActuals={allActuals} onUpdate={handleActualsUpdate} editable={editable} />
+                  <CourseTable uni={activeUniObj} allActuals={allActuals} onUpdate={handleActualsUpdate} editable={editable} counsellors={counsellors} getActualByCounsellor={getActualByCounsellor} setActualByCounsellor={setActualByCounsellor} setAllActuals={setAllActuals} scheduleSave={scheduleSave} />
                 )}
                 {activeUniObj.hasTargets && subTab === "other" && (
-                  <OtherTable uni={activeUniObj} allActuals={allActuals} onUpdate={handleActualsUpdate} editable={editable} />
+                  <OtherTable uni={activeUniObj} allActuals={allActuals} onUpdate={handleActualsUpdate} editable={editable} counsellors={counsellors} getActualByCounsellor={getActualByCounsellor} setActualByCounsellor={setActualByCounsellor} setAllActuals={setAllActuals} scheduleSave={scheduleSave} />
                 )}
                 {!activeUniObj.hasTargets && (
-                  <OtherTable uni={{ ...activeUniObj, otherCourses: activeUniObj.coreCourses.map(c => typeof c === "string" ? c : c.name) }} allActuals={{ ...allActuals, [activeUniObj.id]: { other: allActuals[activeUniObj.id]?.core || {}, core: {} } }} onUpdate={newA => handleActualsUpdate({ ...allActuals, [activeUniObj.id]: { ...allActuals[activeUniObj.id], core: newA[activeUniObj.id]?.other || {} } })} editable={editable} />
+                  <OtherTable uni={{ ...activeUniObj, otherCourses: activeUniObj.coreCourses.map(c => typeof c === "string" ? c : c.name) }} allActuals={{ ...allActuals, [activeUniObj.id]: { other: allActuals[activeUniObj.id]?.core || {}, core: {} } }} onUpdate={newA => handleActualsUpdate({ ...allActuals, [activeUniObj.id]: { ...allActuals[activeUniObj.id], core: newA[activeUniObj.id]?.other || {} } })} editable={editable} counsellors={counsellors} getActualByCounsellor={getActualByCounsellor} setActualByCounsellor={setActualByCounsellor} setAllActuals={setAllActuals} scheduleSave={scheduleSave} />
                 )}
               </div>
             );
