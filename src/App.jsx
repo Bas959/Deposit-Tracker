@@ -1152,39 +1152,53 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
               {collapsedWidgets["campus-distribution"] ? "▸" : "▾"}
             </button>
           </div>
-          {!collapsedWidgets["campus-distribution"] && <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={campusData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fill: T.inkM }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: T.inkL }} axisLine={false} tickLine={false} />
-              <Tooltip content={({ active, payload, label }) => {
-                if (!active || !payload?.length) return null;
-                const entry = campusData.find(d => d.name === label);
-                if (!entry) return null;
-                return (
-                  <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, padding: "10px 14px", fontSize: 12 }}>
-                    <p style={{ fontWeight: 700, color: T.ink, marginBottom: 6 }}>{label}</p>
-                    {payload.map((p, i) => (
-                      <p key={i} style={{ color: p.fill, margin: "2px 0" }}>
-                        {i === 0 ? entry.c1 : entry.c2}: <strong>{p.value}</strong>
-                      </p>
-                    ))}
+          {!collapsedWidgets["campus-distribution"] && (<>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 24px", marginBottom: 10 }}>
+              {campusData.map(d => (
+                <div key={d.name} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: T.inkM }}>{d.name}:</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: 2, background: d.c1Color }} />
+                    <span style={{ fontSize: 11, color: T.inkM }}>{d.c1}</span>
                   </div>
-                );
-              }} />
-              <Legend wrapperStyle={{ fontSize: 11 }} formatter={(value, entry, index) => {
-                return index === 0 ? "Primary Campus" : "Secondary Campus";
-              }} />
-              <RBar dataKey="c1Total" stackId="s" name={campusData[0]?.c1 || "Campus 1"} radius={[0, 0, 0, 0]}>
-                {campusData.map((entry, i) => <Cell key={i} fill={entry.c1Color} />)}
-                <LabelList dataKey="c1Total" position="inside" style={{ fontSize: 11, fill: "#fff", fontWeight: 600 }} />
-              </RBar>
-              <RBar dataKey="c2Total" stackId="s" name={campusData[0]?.c2 || "Campus 2"} radius={[4, 4, 0, 0]}>
-                {campusData.map((entry, i) => <Cell key={i} fill={entry.c2Color} />)}
-                <LabelList dataKey="c2Total" position="inside" style={{ fontSize: 11, fill: "#fff", fontWeight: 600 }} />
-              </RBar>
-            </BarChart>
-          </ResponsiveContainer>}
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: 2, background: d.c2Color }} />
+                    <span style={{ fontSize: 11, color: T.inkM }}>{d.c2}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={campusData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: T.inkM }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: T.inkL }} axisLine={false} tickLine={false} />
+                <Tooltip content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  const entry = campusData.find(d => d.name === label);
+                  if (!entry) return null;
+                  return (
+                    <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, padding: "10px 14px", fontSize: 12 }}>
+                      <p style={{ fontWeight: 700, color: T.ink, marginBottom: 6 }}>{label}</p>
+                      {payload.map((p, i) => (
+                        <p key={i} style={{ color: p.fill, margin: "2px 0" }}>
+                          {i === 0 ? entry.c1 : entry.c2}: <strong>{p.value}</strong>
+                        </p>
+                      ))}
+                    </div>
+                  );
+                }} />
+                <RBar dataKey="c1Total" stackId="s" name={campusData[0]?.c1 || "Campus 1"} radius={[0, 0, 0, 0]}>
+                  {campusData.map((entry, i) => <Cell key={i} fill={entry.c1Color} />)}
+                  <LabelList dataKey="c1Total" position="inside" style={{ fontSize: 11, fill: "#fff", fontWeight: 600 }} />
+                </RBar>
+                <RBar dataKey="c2Total" stackId="s" name={campusData[0]?.c2 || "Campus 2"} radius={[4, 4, 0, 0]}>
+                  {campusData.map((entry, i) => <Cell key={i} fill={entry.c2Color} />)}
+                  <LabelList dataKey="c2Total" position="inside" style={{ fontSize: 11, fill: "#fff", fontWeight: 600 }} />
+                </RBar>
+              </BarChart>
+            </ResponsiveContainer>
+          </>)}
         </div>
       )}
 
