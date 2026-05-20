@@ -782,7 +782,7 @@ function OtherTable({ uni, allActuals, onUpdate, editable, counsellors, getActua
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
-function Dashboard({ config, allActuals, counsellors, getActual, getActualByCounsellor, T }) {
+function Dashboard({ config, allActuals, counsellors, getActual, getActualByCounsellor, T, collapsedWidgets, toggleWidget }) {
   const [filterUni,    setFilterUni]    = useState(null);
   const [filterCourse, setFilterCourse] = useState(null);
   const [showOtherUnis, setShowOtherUnis] = useState(false);
@@ -954,11 +954,19 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
 
         {/* Deposits by University */}
         <div style={{ ...chartCard, flex: 3, minWidth: 300 }}>
-          <p style={chartTitle}>Deposits by University</p>
-          <p style={chartSub}>
-            {filterCourse ? `Showing deposits for "${filterCourse}"` : uniBarDisplay.length < allUniData.length ? `Showing ${uniBarDisplay.length} universities with deposits` : "Click a bar to filter the Courses chart"}
-          </p>
-          {(() => {
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: collapsedWidgets["deposits-by-uni"] ? 0 : 12 }}>
+            <div>
+              <p style={chartTitle}>Deposits by University</p>
+              <p style={{ ...chartSub, margin: 0 }}>
+                {filterCourse ? `Showing deposits for "${filterCourse}"` : uniBarDisplay.length < allUniData.length ? `Showing ${uniBarDisplay.length} universities with deposits` : "Click a bar to filter the Courses chart"}
+              </p>
+            </div>
+            <button onClick={() => toggleWidget("deposits-by-uni")}
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: T.inkL, padding: "0 0 0 8px", flexShrink: 0, lineHeight: 1 }}>
+              {collapsedWidgets["deposits-by-uni"] ? "▸" : "▾"}
+            </button>
+          </div>
+          {!collapsedWidgets["deposits-by-uni"] && (() => {
             const primary = uniBarDisplay.filter(u => PRIMARY_UNI_IDS.includes(u.id));
             const others  = uniBarDisplay.filter(u => !PRIMARY_UNI_IDS.includes(u.id));
             const maxVal  = uniBarDisplay[0]?.value || 1;
@@ -1009,34 +1017,44 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
 
         {/* University share pie */}
         <div style={{ ...chartCard, flex: 1.2, minWidth: 220, display: "flex", flexDirection: "column" }}>
-          <p style={chartTitle}>University Share</p>
-          <p style={chartSub}>Proportion of total deposits</p>
-          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {grandTotal > 0 ? (
-              <PieChart width={200} height={180}>
-                <Pie data={pieData} cx="50%" cy="50%"
-                  innerRadius={45} outerRadius={70} paddingAngle={3} dataKey="value">
-                  {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                </Pie>
-                <Tooltip formatter={(v, n) => [v, n]} content={<CustomTooltip />} />
-              </PieChart>
-            ) : (
-              <p style={{ color: T.inkL, fontSize: 12 }}>No data yet</p>
-            )}
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: collapsedWidgets["uni-share"] ? 0 : 12 }}>
+            <div>
+              <p style={chartTitle}>University Share</p>
+              <p style={{ ...chartSub, margin: 0 }}>Proportion of total deposits</p>
+            </div>
+            <button onClick={() => toggleWidget("uni-share")}
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: T.inkL, padding: "0 0 0 8px", flexShrink: 0, lineHeight: 1 }}>
+              {collapsedWidgets["uni-share"] ? "▸" : "▾"}
+            </button>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            {pieData.map((u, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: 99, background: u.color }} />
-                  <span style={{ fontSize: 11, color: T.inkM }}>{u.name}</span>
+          {!collapsedWidgets["uni-share"] && (<>
+            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {grandTotal > 0 ? (
+                <PieChart width={200} height={180}>
+                  <Pie data={pieData} cx="50%" cy="50%"
+                    innerRadius={45} outerRadius={70} paddingAngle={3} dataKey="value">
+                    {pieData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                  </Pie>
+                  <Tooltip formatter={(v, n) => [v, n]} content={<CustomTooltip />} />
+                </PieChart>
+              ) : (
+                <p style={{ color: T.inkL, fontSize: 12 }}>No data yet</p>
+              )}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              {pieData.map((u, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: 99, background: u.color }} />
+                    <span style={{ fontSize: 11, color: T.inkM }}>{u.name}</span>
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: u.color, fontFamily: "ui-monospace, monospace" }}>
+                    {u.value} {grandTotal > 0 ? `(${Math.round(u.value / grandTotal * 100)}%)` : ""}
+                  </span>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: u.color, fontFamily: "ui-monospace, monospace" }}>
-                  {u.value} {grandTotal > 0 ? `(${Math.round(u.value / grandTotal * 100)}%)` : ""}
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </>)}
         </div>
       </div>
 
@@ -1045,11 +1063,19 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
 
         {/* Top Courses */}
         <div style={{ ...chartCard, flex: 2, minWidth: 300 }}>
-          <p style={chartTitle}>Top Courses by Deposits</p>
-          <p style={chartSub}>
-            {filterUni ? `Filtered to ${config.find(u => u.id === filterUni)?.shortName} — click a bar to filter the University chart` : "Showing top 15 courses — click a bar to filter the University chart"}
-          </p>
-          <ResponsiveContainer width="100%" height={Math.max(courseBarData.length * 28, 200)}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: collapsedWidgets["top-courses"] ? 0 : 12 }}>
+            <div>
+              <p style={chartTitle}>Top Courses by Deposits</p>
+              <p style={{ ...chartSub, margin: 0 }}>
+                {filterUni ? `Filtered to ${config.find(u => u.id === filterUni)?.shortName} — click a bar to filter the University chart` : "Showing top 15 courses — click a bar to filter the University chart"}
+              </p>
+            </div>
+            <button onClick={() => toggleWidget("top-courses")}
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: T.inkL, padding: "0 0 0 8px", flexShrink: 0, lineHeight: 1 }}>
+              {collapsedWidgets["top-courses"] ? "▸" : "▾"}
+            </button>
+          </div>
+          {!collapsedWidgets["top-courses"] && <ResponsiveContainer width="100%" height={Math.max(courseBarData.length * 28, 200)}>
             <BarChart data={courseBarData} layout="vertical" margin={{ top: 0, right: 40, left: 4, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={T.border} horizontal={false} />
               <XAxis type="number" tick={{ fontSize: 10, fill: T.inkL }} axisLine={false} tickLine={false} />
@@ -1065,14 +1091,22 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
                 <LabelList dataKey="value" position="right" style={{ fontSize: 11, fill: T.inkM, fontWeight: 600 }} />
               </RBar>
             </BarChart>
-          </ResponsiveContainer>
+          </ResponsiveContainer>}
         </div>
 
         {/* Target vs Actual */}
         <div style={{ ...chartCard, flex: 1.5, minWidth: 260 }}>
-          <p style={chartTitle}>Target vs Actual · Seat Caps</p>
-          <p style={chartSub}>Core courses only — universities with targets</p>
-          <ResponsiveContainer width="100%" height={Math.max(targetData.length * 60, 180)}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: collapsedWidgets["target-vs-actual"] ? 0 : 12 }}>
+            <div>
+              <p style={chartTitle}>Target vs Actual · Seat Caps</p>
+              <p style={{ ...chartSub, margin: 0 }}>Core courses only — universities with targets</p>
+            </div>
+            <button onClick={() => toggleWidget("target-vs-actual")}
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: T.inkL, padding: "0 0 0 8px", flexShrink: 0, lineHeight: 1 }}>
+              {collapsedWidgets["target-vs-actual"] ? "▸" : "▾"}
+            </button>
+          </div>
+          {!collapsedWidgets["target-vs-actual"] && <ResponsiveContainer width="100%" height={Math.max(targetData.length * 60, 180)}>
             <BarChart data={targetData} layout="vertical" margin={{ top: 0, right: 40, left: 4, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={T.border} horizontal={false} />
               <XAxis type="number" tick={{ fontSize: 10, fill: T.inkL }} axisLine={false} tickLine={false} />
@@ -1087,7 +1121,7 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
                 <LabelList dataKey="Actual" position="right" style={{ fontSize: 10, fill: T.inkM, fontWeight: 600 }} />
               </RBar>
             </BarChart>
-          </ResponsiveContainer>
+          </ResponsiveContainer>}
         </div>
       </div>
 
@@ -1100,15 +1134,25 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
           getActual={getActual}
           getActualByCounsellor={getActualByCounsellor}
           T={T}
+          collapsedWidgets={collapsedWidgets}
+          toggleWidget={toggleWidget}
         />
       </div>
 
       {/* Row 4: Campus Split */}
       {campusData.length > 0 && (
         <div style={{ ...chartCard }}>
-          <p style={chartTitle}>Campus Distribution</p>
-          <p style={chartSub}>All deposits split by campus</p>
-          <ResponsiveContainer width="100%" height={220}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: collapsedWidgets["campus-distribution"] ? 0 : 12 }}>
+            <div>
+              <p style={chartTitle}>Campus Distribution</p>
+              <p style={{ ...chartSub, margin: 0 }}>All deposits split by campus</p>
+            </div>
+            <button onClick={() => toggleWidget("campus-distribution")}
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: T.inkL, padding: "0 0 0 8px", flexShrink: 0, lineHeight: 1 }}>
+              {collapsedWidgets["campus-distribution"] ? "▸" : "▾"}
+            </button>
+          </div>
+          {!collapsedWidgets["campus-distribution"] && <ResponsiveContainer width="100%" height={220}>
             <BarChart data={campusData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: 11, fill: T.inkM }} axisLine={false} tickLine={false} />
@@ -1129,10 +1173,7 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
                 );
               }} />
               <Legend wrapperStyle={{ fontSize: 11 }} formatter={(value, entry, index) => {
-                if (campusData.length === 0) return value;
-                return index === 0
-                  ? campusData.map(d => d.c1).join(' / ')
-                  : campusData.map(d => d.c2).join(' / ');
+                return index === 0 ? "Primary Campus" : "Secondary Campus";
               }} />
               <RBar dataKey="c1Total" stackId="s" name={campusData[0]?.c1 || "Campus 1"} radius={[0, 0, 0, 0]}>
                 {campusData.map((entry, i) => <Cell key={i} fill={entry.c1Color} />)}
@@ -1143,7 +1184,7 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
                 <LabelList dataKey="c2Total" position="inside" style={{ fontSize: 11, fill: "#fff", fontWeight: 600 }} />
               </RBar>
             </BarChart>
-          </ResponsiveContainer>
+          </ResponsiveContainer>}
         </div>
       )}
 
@@ -1537,7 +1578,7 @@ function PasscodeModal({ onSuccess, onClose }) {
 }
 
 // ── COUNSELLOR DASHBOARD ──────────────────────────────────────────────────────
-function CounsellorDashboard({ counsellors, config, allActuals, getActual, getActualByCounsellor, T }) {
+function CounsellorDashboard({ counsellors, config, allActuals, getActual, getActualByCounsellor, T, collapsedWidgets = {}, toggleWidget = () => {} }) {
   const leaderboard = counsellors.map(cn => {
     const byUni = {};
     let total = 0;
@@ -1556,13 +1597,6 @@ function CounsellorDashboard({ counsellors, config, allActuals, getActual, getAc
     });
     return { name: cn, total, byUni };
   }).filter(c => c.total > 0).sort((a, b) => b.total - a.total);
-
-  if (leaderboard.length === 0) return (
-    <div style={{ ...chartCard }}>
-      <p style={chartTitle}>Counsellor Performance</p>
-      <p style={chartSub}>No attributed deposits yet</p>
-    </div>
-  );
 
   const activeUnis = config.filter(uni => leaderboard.some(c => c.byUni[uni.id] > 0));
   const chartData = leaderboard.map(c => ({ name: c.name, total: c.total, ...c.byUni }));
@@ -1583,32 +1617,42 @@ function CounsellorDashboard({ counsellors, config, allActuals, getActual, getAc
 
   return (
     <div style={{ ...chartCard }}>
-      <p style={chartTitle}>Counsellor Performance</p>
-      <p style={chartSub}>Deposits per counsellor split by university</p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", marginBottom: 12 }}>
-        {activeUnis.map(u => (
-          <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-            <div style={{ width: 10, height: 10, borderRadius: 2, background: u.color }} />
-            <span style={{ fontSize: 11, color: T.inkM }}>{u.shortName}</span>
-          </div>
-        ))}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: collapsedWidgets["counsellor-performance"] ? 0 : 12 }}>
+        <div>
+          <p style={chartTitle}>Counsellor Performance</p>
+          <p style={{ ...chartSub, margin: 0 }}>{leaderboard.length === 0 ? "No attributed deposits yet" : "Deposits per counsellor split by university"}</p>
+        </div>
+        <button onClick={() => toggleWidget("counsellor-performance")}
+          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: T.inkL, padding: "0 0 0 8px", flexShrink: 0, lineHeight: 1 }}>
+          {collapsedWidgets["counsellor-performance"] ? "▸" : "▾"}
+        </button>
       </div>
-      <ResponsiveContainer width="100%" height={chartHeight}>
-        <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 48, left: 4, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke={T.border} horizontal={false} />
-          <XAxis type="number" tick={{ fontSize: 10, fill: T.inkL }} axisLine={false} tickLine={false} />
-          <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11, fill: T.inkM }} axisLine={false} tickLine={false} />
-          <Tooltip content={<CustomTooltip />} />
-          {activeUnis.map((uni, i) => (
-            <RBar key={uni.id} dataKey={uni.id} name={uni.shortName} stackId="stack"
-              fill={uni.color} radius={i === activeUnis.length - 1 ? [0, 4, 4, 0] : [0, 0, 0, 0]}>
-              {i === activeUnis.length - 1 && (
-                <LabelList dataKey="total" position="right" style={{ fontSize: 11, fill: T.inkM, fontWeight: 600 }} />
-              )}
-            </RBar>
+      {!collapsedWidgets["counsellor-performance"] && leaderboard.length > 0 && (<>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", marginBottom: 12 }}>
+          {activeUnis.map(u => (
+            <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <div style={{ width: 10, height: 10, borderRadius: 2, background: u.color }} />
+              <span style={{ fontSize: 11, color: T.inkM }}>{u.shortName}</span>
+            </div>
           ))}
-        </BarChart>
-      </ResponsiveContainer>
+        </div>
+        <ResponsiveContainer width="100%" height={chartHeight}>
+          <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 48, left: 4, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={T.border} horizontal={false} />
+            <XAxis type="number" tick={{ fontSize: 10, fill: T.inkL }} axisLine={false} tickLine={false} />
+            <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11, fill: T.inkM }} axisLine={false} tickLine={false} />
+            <Tooltip content={<CustomTooltip />} />
+            {activeUnis.map((uni, i) => (
+              <RBar key={uni.id} dataKey={uni.id} name={uni.shortName} stackId="stack"
+                fill={uni.color} radius={i === activeUnis.length - 1 ? [0, 4, 4, 0] : [0, 0, 0, 0]}>
+                {i === activeUnis.length - 1 && (
+                  <LabelList dataKey="total" position="right" style={{ fontSize: 11, fill: T.inkM, fontWeight: 600 }} />
+                )}
+              </RBar>
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
+      </>)}
     </div>
   );
 }
@@ -1897,6 +1941,17 @@ export default function App() {
 
   const [showUniDropdown, setShowUniDropdown] = useState(false);
   const [showOthersBreakdown, setShowOthersBreakdown] = useState(false);
+  const [collapsedWidgets, setCollapsedWidgets] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("collapsed_widgets") || "{}"); }
+    catch { return {}; }
+  });
+  const toggleWidget = (id) => {
+    setCollapsedWidgets(prev => {
+      const next = { ...prev, [id]: !prev[id] };
+      localStorage.setItem("collapsed_widgets", JSON.stringify(next));
+      return next;
+    });
+  };
 
   const refs    = useRef({});
   refs.current  = { allActuals, config, logo };
@@ -2161,33 +2216,33 @@ export default function App() {
                           <span style={{ fontSize: 12, fontWeight: 700, color: u.color, fontFamily: "ui-monospace, monospace" }}>{u.total}</span>
                         </div>
                       ))}
-                      <div>
-                        <div
-                          onClick={() => othersTotal > 0 && setShowOthersBreakdown(v => !v)}
-                          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: othersTotal > 0 ? "pointer" : "default" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <div style={{ width: 8, height: 8, borderRadius: 99, background: T.inkL }} />
-                            <span style={{ fontSize: 11, color: T.inkM, fontWeight: 500 }}>Other Universities</span>
-                            {othersTotal > 0 && (
+                      {othersTotal > 0 && (
+                        <div>
+                          <div
+                            onClick={() => setShowOthersBreakdown(v => !v)}
+                            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <div style={{ width: 8, height: 8, borderRadius: 99, background: T.inkL }} />
+                              <span style={{ fontSize: 11, color: T.inkM, fontWeight: 500 }}>Other Universities</span>
                               <span style={{ fontSize: 9, color: T.inkL }}>{showOthersBreakdown ? "▲" : "▼"}</span>
-                            )}
+                            </div>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: T.inkL, fontFamily: "ui-monospace, monospace" }}>{othersTotal}</span>
                           </div>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: T.inkL, fontFamily: "ui-monospace, monospace" }}>{othersTotal}</span>
-                        </div>
-                        {showOthersBreakdown && othersWithData.length > 0 && (
-                          <div style={{ marginTop: 6, paddingLeft: 14, display: "flex", flexDirection: "column", gap: 5, borderLeft: `2px solid ${T.border}` }}>
-                            {othersWithData.map(u => (
-                              <div key={u.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                  <div style={{ width: 6, height: 6, borderRadius: 99, background: u.color }} />
-                                  <span style={{ fontSize: 10, color: T.inkM }}>{u.shortName}</span>
+                          {showOthersBreakdown && othersWithData.length > 0 && (
+                            <div style={{ marginTop: 6, paddingLeft: 14, display: "flex", flexDirection: "column", gap: 5, borderLeft: `2px solid ${T.border}` }}>
+                              {othersWithData.map(u => (
+                                <div key={u.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                    <div style={{ width: 6, height: 6, borderRadius: 99, background: u.color }} />
+                                    <span style={{ fontSize: 10, color: T.inkM }}>{u.shortName}</span>
+                                  </div>
+                                  <span style={{ fontSize: 11, fontWeight: 700, color: u.color, fontFamily: "ui-monospace, monospace" }}>{u.total}</span>
                                 </div>
-                                <span style={{ fontSize: 11, fontWeight: 700, color: u.color, fontFamily: "ui-monospace, monospace" }}>{u.total}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </>
                   );
                 })()}
@@ -2242,7 +2297,7 @@ export default function App() {
           {/* DASHBOARD VIEW */}
           {activeView === "dashboard" && (
             <div style={{ background: T.white, borderRadius: "0 12px 12px 12px", border: `1px solid ${T.border}`, borderTop: "none", boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
-              <Dashboard config={config} allActuals={allActuals} counsellors={counsellors} getActual={getActual} getActualByCounsellor={getActualByCounsellor} T={T} />
+              <Dashboard config={config} allActuals={allActuals} counsellors={counsellors} getActual={getActual} getActualByCounsellor={getActualByCounsellor} T={T} collapsedWidgets={collapsedWidgets} toggleWidget={toggleWidget} />
             </div>
           )}
 
