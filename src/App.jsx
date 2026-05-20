@@ -1500,7 +1500,6 @@ function CourseManager({ config, onSave, onClose, counsellors, setCounsellors, e
           </div>
         </div>
       </div>
-    </div>
   );
   return embedded ? inner : (
     <div style={{ position: "fixed", inset: 0, background: "rgba(22,17,43,.55)", backdropFilter: "blur(8px)", zIndex: 998, display: "flex", alignItems: "flex-start", justifyContent: "flex-end" }} onClick={onClose}>
