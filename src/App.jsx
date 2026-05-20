@@ -1667,6 +1667,7 @@ export default function App() {
 
   // ── Save ─────────────────────────────────────────────────────────────────────
   const scheduleSave = useCallback(() => {
+    if (!refs.current.config || refs.current.config.length === 0) return;
     clearTimeout(timer.current);
     setSaving(true);
     timer.current = setTimeout(async () => {
