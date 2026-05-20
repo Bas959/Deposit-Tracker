@@ -1786,6 +1786,16 @@ export default function App() {
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {saving ? <span style={{ fontSize: 11, color: T.inkL, fontStyle: "italic" }}>Saving…</span>
                     : updatedAt && <span style={{ fontSize: 11, color: T.inkL }}>Updated {updatedAt}</span>}
+            <button onClick={() => {
+              const backup = { all_actuals: allActuals, course_config: config, counsellors, exported_at: new Date().toISOString() };
+              const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a"); a.href = url;
+              a.download = `deposit-tracker-backup-${new Date().toISOString().slice(0,10)}.json`;
+              a.click(); URL.revokeObjectURL(url);
+            }} style={{ padding: "8px 16px", background: T.white, border: `1.5px solid ${T.border}`, borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, color: T.inkM, fontFamily: "inherit" }}>
+              ↓ Export
+            </button>
             {editable && <button onClick={() => setShowManager(true)} style={{ background: T.purpleL, border: `1px solid ${T.purpleM}`, color: T.purple, padding: "8px 14px", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: "inherit" }}>⚙ Manage</button>}
             {editable
               ? <button onClick={() => setEditable(false)} style={{ background: T.green, border: "none", color: T.white, padding: "8px 18px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: "inherit" }}>🔓 Lock</button>
