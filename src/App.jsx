@@ -863,8 +863,14 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
 
   // 4. Campus split — unis with 2 campuses
   const campusData = config.filter(u => u.campus2).map(uni => {
-    const c1Total = uni.coreCourses.reduce((s, c) => s + getActual(allActuals, uni.id, "core", typeof c === "string" ? c : c.name, uni.campus1.key), 0);
-    const c2Total = uni.coreCourses.reduce((s, c) => s + getActual(allActuals, uni.id, "core", typeof c === "string" ? c : c.name, uni.campus2.key), 0);
+    const c1Total = uni.coreCourses.reduce((s, c) => {
+      const name = typeof c === "string" ? c : c.name;
+      return s + getActual(allActuals, uni.id, "core", name, uni.campus1.key);
+    }, 0);
+    const c2Total = uni.coreCourses.reduce((s, c) => {
+      const name = typeof c === "string" ? c : c.name;
+      return s + getActual(allActuals, uni.id, "core", name, uni.campus2.key);
+    }, 0);
     return {
       name: uni.shortName,
       [uni.campus1.label]: c1Total,
