@@ -1579,6 +1579,8 @@ export default function App() {
   const [updatedAt,   setUpdatedAt]   = useState(null);
   const [logo,        setLogo]        = useState(null);
   const [counsellors, setCounsellors] = useState([]);
+  const [showAddDeposit, setShowAddDeposit] = useState(false);
+  const [depositForm, setDepositForm] = useState({ counsellor: "", uniId: "", section: "core", courseName: "", campusKey: "", count: 1 });
 
   const [showUniDropdown, setShowUniDropdown] = useState(false);
   const [showOthersBreakdown, setShowOthersBreakdown] = useState(false);
@@ -1693,6 +1695,17 @@ export default function App() {
     await supabase.from("tracker_data").update({ course_config: newConfig, updated_at: new Date().toISOString() }).eq("id", 1);
   }, []);
 
+  const handleAddDeposit = () => {
+    const { counsellor, uniId, section, courseName, campusKey, count } = depositForm;
+    if (!counsellor || !uniId || !courseName || !campusKey || count < 1) return;
+    const current = getActualByCounsellor(allActuals, uniId, section, courseName, campusKey, counsellor);
+    const updated = setActualByCounsellor(allActuals, uniId, section, courseName, campusKey, counsellor, current + count);
+    setAllActuals(updated);
+    scheduleSave(updated, config);
+    setDepositForm({ counsellor: "", uniId: "", section: "core", courseName: "", campusKey: "", count: 1 });
+    setShowAddDeposit(false);
+  };
+
   const handleLogo = (e) => {
     const f = e.target.files[0]; if (!f) return;
     const r = new FileReader();
@@ -1796,6 +1809,12 @@ export default function App() {
             }} style={{ padding: "8px 16px", background: T.white, border: `1.5px solid ${T.border}`, borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, color: T.inkM, fontFamily: "inherit" }}>
               ↓ Export
             </button>
+            {editable && (
+              <button onClick={() => setShowAddDeposit(true)}
+                style={{ padding: "8px 18px", background: T.purple, color: T.white, border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}>
+                + Add Deposit
+              </button>
+            )}
             {editable && <button onClick={() => setShowManager(true)} style={{ background: T.purpleL, border: `1px solid ${T.purpleM}`, color: T.purple, padding: "8px 14px", borderRadius: 8, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: "inherit" }}>⚙ Manage</button>}
             {editable
               ? <button onClick={() => setEditable(false)} style={{ background: T.green, border: "none", color: T.white, padding: "8px 18px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: "inherit" }}>🔓 Lock</button>
@@ -1962,6 +1981,107 @@ export default function App() {
             Includes: Deposits · Sept 26 Deposits · Defer/Refund/Change Uni &nbsp;·&nbsp; Closed Lost excluded
           </p>
         </div>
+
+        {/* ADD DEPOSIT MODAL */}
+        {showAddDeposit && (() => {
+          const selUni = config.find(u => u.id === depositForm.uniId);
+          const courses = selUni ? [
+            ...(selUni.coreCourses || []).map(c => ({ name: typeof c === "string" ? c : c.name, section: "core" })),
+            ...(selUni.otherCourses || []).map(c => ({ name: c, section: "other" })),
+          ] : [];
+          const campuses = selUni ? [
+            { key: selUni.campus1.key, label: selUni.campus1.label },
+            ...(selUni.campus2 ? [{ key: selUni.campus2.key, label: selUni.campus2.label }] : []),
+          ] : [];
+          const isValid = depositForm.counsellor && depositForm.uniId && depositForm.courseName && depositForm.campusKey && depositForm.count >= 1;
+          const sel = (field, value, extra = {}) => setDepositForm(p => ({ ...p, [field]: value, ...extra }));
+          const selectStyle = { width: "100%", padding: "9px 12px", border: `1.5px solid ${T.border}`, borderRadius: 8, fontSize: 13, fontFamily: "inherit", background: T.white, color: T.ink, outline: "none", cursor: "pointer" };
+          const labelStyle = { fontSize: 11, fontWeight: 700, color: T.inkM, textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 5, display: "block" };
+
+          return (
+            <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.45)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center" }}
+              onClick={e => e.target === e.currentTarget && setShowAddDeposit(false)}>
+              <div style={{ background: T.white, borderRadius: 16, padding: "28px 32px", width: 480, boxShadow: "0 20px 60px rgba(0,0,0,.2)", display: "flex", flexDirection: "column", gap: 18 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div>
+                    <p style={{ fontSize: 18, fontWeight: 700, color: T.ink, margin: 0 }}>Add Deposit</p>
+                    <p style={{ fontSize: 12, color: T.inkM, margin: "2px 0 0" }}>Record a new deposit against a counsellor and course</p>
+                  </div>
+                  <button onClick={() => setShowAddDeposit(false)} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: T.inkL }}>✕</button>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  <div>
+                    <label style={labelStyle}>Counsellor</label>
+                    <select value={depositForm.counsellor} onChange={e => sel("counsellor", e.target.value)} style={selectStyle}>
+                      <option value="">Select counsellor…</option>
+                      {counsellors.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={labelStyle}>University</label>
+                    <select value={depositForm.uniId} onChange={e => sel("uniId", e.target.value, { courseName: "", campusKey: "", section: "core" })} style={selectStyle}>
+                      <option value="">Select university…</option>
+                      {[...config].sort((a, b) => a.name.localeCompare(b.name)).map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                    </select>
+                  </div>
+
+                  {selUni && (
+                    <div>
+                      <label style={labelStyle}>Course</label>
+                      <select value={depositForm.courseName} onChange={e => {
+                        const found = courses.find(c => c.name === e.target.value);
+                        sel("courseName", e.target.value, { section: found?.section || "core", campusKey: campuses.length === 1 ? campuses[0].key : "" });
+                      }} style={selectStyle}>
+                        <option value="">Select course…</option>
+                        {courses.filter(c => c.section === "core").length > 0 && (
+                          <optgroup label="Core Courses">
+                            {courses.filter(c => c.section === "core").map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                          </optgroup>
+                        )}
+                        {courses.filter(c => c.section === "other").length > 0 && (
+                          <optgroup label="Other Courses">
+                            {courses.filter(c => c.section === "other").map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                          </optgroup>
+                        )}
+                        {courses.length === 0 && <option disabled>No courses set up yet</option>}
+                      </select>
+                    </div>
+                  )}
+
+                  {selUni && campuses.length > 1 && depositForm.courseName && (
+                    <div>
+                      <label style={labelStyle}>Campus</label>
+                      <select value={depositForm.campusKey} onChange={e => sel("campusKey", e.target.value)} style={selectStyle}>
+                        <option value="">Select campus…</option>
+                        {campuses.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
+                      </select>
+                    </div>
+                  )}
+
+                  <div>
+                    <label style={labelStyle}>Number of Deposits</label>
+                    <input type="number" min="1" value={depositForm.count}
+                      onChange={e => sel("count", Math.max(1, parseInt(e.target.value) || 1))}
+                      style={{ ...selectStyle, width: 100 }} />
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", paddingTop: 4 }}>
+                  <button onClick={() => setShowAddDeposit(false)}
+                    style={{ padding: "10px 20px", background: T.bg, border: `1px solid ${T.border}`, borderRadius: 8, cursor: "pointer", fontSize: 13, fontFamily: "inherit", color: T.inkM }}>
+                    Cancel
+                  </button>
+                  <button onClick={handleAddDeposit} disabled={!isValid}
+                    style={{ padding: "10px 24px", background: isValid ? T.purple : T.border, color: T.white, border: "none", borderRadius: 8, cursor: isValid ? "pointer" : "not-allowed", fontSize: 13, fontWeight: 700, fontFamily: "inherit" }}>
+                    Save Deposit
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* FOOTER */}
         <div style={{ borderTop: `1px solid ${T.border}`, padding: "14px 40px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
