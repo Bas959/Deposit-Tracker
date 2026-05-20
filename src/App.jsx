@@ -362,9 +362,40 @@ const ni  = (v) => parseInt(v) || 0;
 const pct = (a, t) => t > 0 ? Math.min(100, Math.round((a / t) * 100)) : null;
 const uid = () => Math.random().toString(36).slice(2, 8);
 
-function getActual(allActuals, uniId, section, courseName, campusKey) {
-  return ni(allActuals?.[uniId]?.[section]?.[courseName]?.[campusKey]);
+function getActual(actuals, uniId, section, courseName, campusKey) {
+  const val = actuals?.[uniId]?.[section]?.[courseName]?.[campusKey];
+  if (!val) return 0;
+  if (typeof val === 'number') return val;
+  return Object.values(val).reduce((s, n) => s + (typeof n === 'number' ? n : 0), 0);
 }
+
+function getActualByCounsellor(actuals, uniId, section, courseName, campusKey, counsellor) {
+  const val = actuals?.[uniId]?.[section]?.[courseName]?.[campusKey];
+  if (!val || typeof val === 'number') return 0;
+  return val[counsellor] || 0;
+}
+
+function setActualByCounsellor(prev, uniId, section, courseName, campusKey, counsellor, value) {
+  const current = prev?.[uniId]?.[section]?.[courseName]?.[campusKey];
+  const currentObj = (!current || typeof current === 'number')
+    ? (current > 0 ? { Unattributed: current } : {})
+    : { ...current };
+  if (value === 0) { delete currentObj[counsellor]; } else { currentObj[counsellor] = value; }
+  return {
+    ...prev,
+    [uniId]: {
+      ...prev?.[uniId],
+      [section]: {
+        ...prev?.[uniId]?.[section],
+        [courseName]: {
+          ...prev?.[uniId]?.[section]?.[courseName],
+          [campusKey]: currentObj,
+        },
+      },
+    },
+  };
+}
+
 function setActual(prev, uniId, section, courseName, campusKey, value) {
   return {
     ...prev,
@@ -952,10 +983,11 @@ function Dashboard({ config, allActuals }) {
 }
 
 // ── COURSE MANAGER PANEL ──────────────────────────────────────────────────────
-function CourseManager({ config, onSave, onClose }) {
+function CourseManager({ config, onSave, onClose, counsellors, setCounsellors }) {
   const [draft, setDraft]         = useState(JSON.parse(JSON.stringify(config)));
   const [activeUni, setActiveUni] = useState(draft[0]?.id || "");
   const [newCourse, setNewCourse] = useState({ name: "", section: "core", targets: {} });
+  const [newCounsellorName, setNewCounsellorName] = useState("");
   const [addingTo, setAddingTo]   = useState(null); // uniId
   const [addingUni, setAddingUni] = useState(false);
   const [newUni, setNewUni]       = useState({ name: "", shortName: "", color: T.teal, intakeLabel: "", hasTargets: true, campus1: { key: "", label: "", color: T.purple }, campus2: { key: "", label: "", color: T.teal } });
@@ -1274,6 +1306,29 @@ function CourseManager({ config, onSave, onClose }) {
               )}
             </div>
           )}
+
+          <div style={{ padding: "16px 24px", borderTop: `1px solid ${T.border}`, marginTop: 8 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: T.inkL, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 8 }}>Counsellors</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 10 }}>
+              {counsellors.map((c, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 10px", background: T.bg, borderRadius: 6 }}>
+                  <span style={{ fontSize: 12, color: T.ink }}>{c}</span>
+                  <button onClick={() => setCounsellors(cs => cs.filter((_, j) => j !== i))}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: T.red, fontSize: 12 }}>✕</button>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {inp(newCounsellorName, setNewCounsellorName, "Add counsellor name")}
+              <button onClick={() => {
+                const name = newCounsellorName.trim();
+                if (name && !counsellors.includes(name)) {
+                  setCounsellors(cs => [...cs, name]);
+                  setNewCounsellorName("");
+                }
+              }} style={{ padding: "8px 14px", background: T.purple, color: T.white, border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: "inherit", flexShrink: 0 }}>Add</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1319,6 +1374,7 @@ export default function App() {
   const [saving,      setSaving]      = useState(false);
   const [updatedAt,   setUpdatedAt]   = useState(null);
   const [logo,        setLogo]        = useState(null);
+  const [counsellors, setCounsellors] = useState([]);
 
   const [showUniDropdown, setShowUniDropdown] = useState(false);
   const [showOthersBreakdown, setShowOthersBreakdown] = useState(false);
@@ -1342,9 +1398,32 @@ export default function App() {
   const fmtDate = d => new Date(d).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
   // ── Load & realtime ─────────────────────────────────────────────────────────
+  const migrateActualsV2 = (raw) => {
+    if (!raw) return {};
+    const out = {};
+    for (const uniId of Object.keys(raw)) {
+      out[uniId] = {};
+      for (const section of Object.keys(raw[uniId] || {})) {
+        out[uniId][section] = {};
+        for (const course of Object.keys(raw[uniId][section] || {})) {
+          out[uniId][section][course] = {};
+          for (const campus of Object.keys(raw[uniId][section][course] || {})) {
+            const val = raw[uniId][section][course][campus];
+            if (typeof val === 'number') {
+              out[uniId][section][course][campus] = val > 0 ? { Unattributed: val } : {};
+            } else {
+              out[uniId][section][course][campus] = val || {};
+            }
+          }
+        }
+      }
+    }
+    return out;
+  };
+
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase.from("tracker_data").select("*").eq("id", 1).single();
+      const { data } = await supabase.from("tracker_data").select("course_config, all_actuals, logo_data, counsellors").eq("id", 1).single();
       if (!data) { setLoading(false); return; }
 
       // Load config
@@ -1356,9 +1435,11 @@ export default function App() {
       let acts = data.all_actuals && Object.keys(data.all_actuals).length
         ? data.all_actuals
         : migrateActuals(data);
-      setAllActuals(acts);
+      const migratedActuals = migrateActualsV2(acts);
+      setAllActuals(migratedActuals);
 
       if (data.logo_data) setLogo(data.logo_data);
+      if (Array.isArray(data.counsellors)) setCounsellors(data.counsellors);
       if (data.updated_at) setUpdatedAt(fmtDate(data.updated_at));
       setLoading(false);
 
@@ -1388,12 +1469,13 @@ export default function App() {
       const now = new Date().toISOString(), r = refs.current;
       await supabase.from("tracker_data").update({
         all_actuals: r.allActuals, course_config: r.config,
+        counsellors: counsellors,
         logo_data: r.logo, updated_at: now,
       }).eq("id", 1);
       setSaving(false);
       setUpdatedAt(fmtDate(now));
     }, 700);
-  }, []);
+  }, [counsellors]);
 
   const handleActualsUpdate = useCallback((newActuals) => {
     setAllActuals(newActuals);
@@ -1469,7 +1551,7 @@ export default function App() {
   return (
     <>
       {showModal    && <PasscodeModal onSuccess={() => { setEditable(true); setShowModal(false); }} onClose={() => setShowModal(false)} />}
-      {showManager  && <CourseManager config={config} onSave={handleSaveConfig} onClose={() => setShowManager(false)} />}
+      {showManager  && <CourseManager config={config} onSave={handleSaveConfig} onClose={() => setShowManager(false)} counsellors={counsellors} setCounsellors={setCounsellors} />}
 
       <div style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: T.bg, minHeight: "100vh" }}>
 
