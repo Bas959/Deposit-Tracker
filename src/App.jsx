@@ -1058,7 +1058,21 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
         </div>
       </div>
 
-      {/* Row 2: Top Courses + Target vs Actual */}
+      {/* Row 2: Counsellor Performance */}
+      <div style={{ marginTop: 16 }}>
+        <CounsellorDashboard
+          counsellors={counsellors}
+          config={config}
+          allActuals={allActuals}
+          getActual={getActual}
+          getActualByCounsellor={getActualByCounsellor}
+          T={T}
+          collapsedWidgets={collapsedWidgets}
+          toggleWidget={toggleWidget}
+        />
+      </div>
+
+      {/* Row 3: Top Courses + Target vs Actual */}
       <div style={{ display: "flex", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
 
         {/* Top Courses */}
@@ -1123,20 +1137,6 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
             </BarChart>
           </ResponsiveContainer>}
         </div>
-      </div>
-
-      {/* Row 3: Counsellor Performance */}
-      <div style={{ marginTop: 16 }}>
-        <CounsellorDashboard
-          counsellors={counsellors}
-          config={config}
-          allActuals={allActuals}
-          getActual={getActual}
-          getActualByCounsellor={getActualByCounsellor}
-          T={T}
-          collapsedWidgets={collapsedWidgets}
-          toggleWidget={toggleWidget}
-        />
       </div>
 
       {/* Row 4: Campus Split */}
