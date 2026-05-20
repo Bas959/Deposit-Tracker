@@ -1609,6 +1609,134 @@ function CounsellorDashboard({ counsellors, config, allActuals, getActual, getAc
   );
 }
 
+// ── DATA MANAGER ──────────────────────────────────────────────────────────────
+function DataManager({ config, allActuals, setAllActuals, onClose, scheduleSave }) {
+  const [search, setSearch] = useState("");
+  const [editKey, setEditKey] = useState(null);
+  const [editVal, setEditVal] = useState("");
+
+  const rows = useMemo(() => {
+    const out = [];
+    config.forEach(uni => {
+      ["core", "other"].forEach(section => {
+        const courses = section === "core" ? (uni.coreCourses || []) : (uni.otherCourses || []);
+        courses.forEach(c => {
+          const courseName = typeof c === "string" ? c : c.name;
+          [uni.campus1, uni.campus2].filter(Boolean).forEach(campus => {
+            const val = allActuals?.[uni.id]?.[section]?.[courseName]?.[campus.key];
+            if (!val) return;
+            if (typeof val === "number") {
+              if (val > 0) out.push({ key: `${uni.id}||${section}||${courseName}||${campus.key}||Unattributed`, uniName: uni.name, uniId: uni.id, section, courseName, campusLabel: campus.label, campusKey: campus.key, counsellor: "Unattributed", count: val });
+            } else {
+              Object.entries(val).forEach(([counsellor, count]) => {
+                if (typeof count === "number" && count > 0)
+                  out.push({ key: `${uni.id}||${section}||${courseName}||${campus.key}||${counsellor}`, uniName: uni.name, uniId: uni.id, section, courseName, campusLabel: campus.label, campusKey: campus.key, counsellor, count });
+              });
+            }
+          });
+        });
+      });
+    });
+    return out;
+  }, [config, allActuals]);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return rows;
+    const q = search.toLowerCase();
+    return rows.filter(r =>
+      r.uniName.toLowerCase().includes(q) || r.courseName.toLowerCase().includes(q) ||
+      r.campusLabel.toLowerCase().includes(q) || r.counsellor.toLowerCase().includes(q) ||
+      String(r.count).includes(q)
+    );
+  }, [rows, search]);
+
+  const startEdit = row => { setEditKey(row.key); setEditVal(String(row.count)); };
+
+  const commitEdit = row => {
+    const newCount = parseInt(editVal, 10);
+    if (isNaN(newCount) || newCount < 0) { setEditKey(null); return; }
+    setAllActuals(prev => setActualByCounsellor(prev, row.uniId, row.section, row.courseName, row.campusKey, row.counsellor, newCount));
+    scheduleSave();
+    setEditKey(null);
+  };
+
+  const deleteRow = row => {
+    setAllActuals(prev => setActualByCounsellor(prev, row.uniId, row.section, row.courseName, row.campusKey, row.counsellor, 0));
+    scheduleSave();
+  };
+
+  const thS = { padding: "10px 14px", fontSize: 11, fontWeight: 700, color: T.inkL, textTransform: "uppercase", letterSpacing: ".07em", textAlign: "left", borderBottom: `1.5px solid ${T.border}`, background: T.bg, position: "sticky", top: 0, zIndex: 1 };
+  const tdS = { padding: "9px 14px", fontSize: 13, color: T.ink, borderBottom: `1px solid ${T.border}` };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 300, display: "flex", justifyContent: "flex-end" }}
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <div style={{ width: "min(100vw, 980px)", height: "100%", background: T.white, display: "flex", flexDirection: "column", boxShadow: "-8px 0 40px rgba(0,0,0,.15)" }}>
+        <div style={{ padding: "20px 28px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <div>
+            <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: T.ink }}>Data Manager</p>
+            <p style={{ margin: "2px 0 0", fontSize: 12, color: T.inkM }}>{rows.length} entries across all universities</p>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <input placeholder="Search entries…" value={search} onChange={e => setSearch(e.target.value)}
+              style={{ padding: "8px 14px", border: `1.5px solid ${T.border}`, borderRadius: 8, fontSize: 13, fontFamily: "inherit", outline: "none", width: 220, color: T.ink }} />
+            <button onClick={onClose} style={{ background: "none", border: `1.5px solid ${T.border}`, borderRadius: 8, padding: "7px 14px", cursor: "pointer", fontSize: 13, color: T.inkM, fontFamily: "inherit" }}>✕ Close</button>
+          </div>
+        </div>
+        <div style={{ flex: 1, overflow: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                <th style={thS}>University</th>
+                <th style={thS}>Section</th>
+                <th style={thS}>Course</th>
+                <th style={thS}>Campus</th>
+                <th style={thS}>Counsellor</th>
+                <th style={{ ...thS, textAlign: "right" }}>Count</th>
+                <th style={{ ...thS, textAlign: "center" }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 && (
+                <tr><td colSpan={7} style={{ ...tdS, textAlign: "center", color: T.inkL, padding: "40px 14px" }}>No entries found</td></tr>
+              )}
+              {filtered.map(row => (
+                <tr key={row.key} style={{ background: editKey === row.key ? T.purpleL : "transparent" }}>
+                  <td style={tdS}>{row.uniName}</td>
+                  <td style={tdS}>
+                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: row.section === "core" ? T.purple : T.teal, background: row.section === "core" ? T.purpleL : T.tealL, padding: "2px 7px", borderRadius: 4 }}>
+                      {row.section}
+                    </span>
+                  </td>
+                  <td style={tdS}>{row.courseName}</td>
+                  <td style={tdS}>{row.campusLabel}</td>
+                  <td style={tdS}>{row.counsellor}</td>
+                  <td style={{ ...tdS, textAlign: "right", fontFamily: "ui-monospace, monospace", fontWeight: 700 }}>
+                    {editKey === row.key ? (
+                      <input type="number" min="0" value={editVal}
+                        onChange={e => setEditVal(e.target.value)}
+                        onBlur={() => commitEdit(row)}
+                        onKeyDown={e => { if (e.key === "Enter") commitEdit(row); if (e.key === "Escape") setEditKey(null); }}
+                        autoFocus
+                        style={{ width: 64, padding: "4px 8px", border: `1.5px solid ${T.purple}`, borderRadius: 6, fontSize: 13, fontFamily: "ui-monospace, monospace", fontWeight: 700, textAlign: "right", outline: "none" }} />
+                    ) : row.count}
+                  </td>
+                  <td style={{ ...tdS, textAlign: "center" }}>
+                    <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
+                      <button onClick={() => startEdit(row)} style={{ padding: "4px 10px", background: T.purpleL, border: `1px solid ${T.purpleM}`, color: T.purple, borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>Edit</button>
+                      <button onClick={() => deleteRow(row)} style={{ padding: "4px 10px", background: "#FFF0F0", border: "1px solid #FFCDD2", color: "#E53935", borderRadius: 6, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "inherit" }}>Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const PRIMARY_UNI_IDS = ["sunderland", "ysj", "uh"];
 
 // ── APP ───────────────────────────────────────────────────────────────────────
@@ -1627,6 +1755,7 @@ export default function App() {
   const [counsellors, setCounsellors] = useState([]);
   const [showAddDeposit, setShowAddDeposit] = useState(false);
   const [depositForm, setDepositForm] = useState({ counsellor: "", uniId: "", section: "core", courseName: "", campusKey: "", count: 1 });
+  const [showDataManager, setShowDataManager] = useState(false);
 
   const [showUniDropdown, setShowUniDropdown] = useState(false);
   const [showOthersBreakdown, setShowOthersBreakdown] = useState(false);
@@ -1855,6 +1984,12 @@ export default function App() {
                 a.click(); URL.revokeObjectURL(url);
               }} style={{ padding: "8px 16px", background: T.white, border: `1.5px solid ${T.border}`, borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, color: T.inkM, fontFamily: "inherit" }}>
                 ↓ Export
+              </button>
+            )}
+            {editable && (
+              <button onClick={() => setShowDataManager(true)}
+                style={{ padding: "8px 14px", background: T.white, border: `1.5px solid ${T.border}`, borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, color: T.inkM, fontFamily: "inherit" }}>
+                📋 Data
               </button>
             )}
             {editable && (
@@ -2124,6 +2259,17 @@ export default function App() {
             </div>
           );
         })()}
+
+        {/* DATA MANAGER */}
+        {showDataManager && (
+          <DataManager
+            config={config}
+            allActuals={allActuals}
+            setAllActuals={setAllActuals}
+            onClose={() => setShowDataManager(false)}
+            scheduleSave={scheduleSave}
+          />
+        )}
 
         {/* FOOTER */}
         <div style={{ borderTop: `1px solid ${T.border}`, padding: "14px 40px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
