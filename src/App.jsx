@@ -774,7 +774,7 @@ function OtherTable({ uni, allActuals, onUpdate, editable, counsellors, getActua
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
-function Dashboard({ config, allActuals }) {
+function Dashboard({ config, allActuals, counsellors, getActual, getActualByCounsellor, T }) {
   const [filterUni,    setFilterUni]    = useState(null);
   const [filterCourse, setFilterCourse] = useState(null);
   const [showOtherUnis, setShowOtherUnis] = useState(false);
@@ -1104,6 +1104,17 @@ function Dashboard({ config, allActuals }) {
       <p style={{ margin: "16px 0 0", fontSize: 11, color: T.inkL, textAlign: "center" }}>
         Click any bar to cross-filter · Click again to clear · Use chips above to clear filters
       </p>
+
+      <div style={{ marginTop: 16 }}>
+        <CounsellorDashboard
+          counsellors={counsellors}
+          config={config}
+          allActuals={allActuals}
+          getActual={getActual}
+          getActualByCounsellor={getActualByCounsellor}
+          T={T}
+        />
+      </div>
     </div>
   );
 }
@@ -1565,6 +1576,8 @@ function CounsellorDashboard({ counsellors, config, allActuals, getActual, getAc
   );
 }
 
+const PRIMARY_UNI_IDS = ["sunderland", "ysj", "uh"];
+
 // ── APP ───────────────────────────────────────────────────────────────────────
 export default function App() {
   const [config,      setConfig]      = useState([]);
@@ -1799,16 +1812,18 @@ export default function App() {
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {saving ? <span style={{ fontSize: 11, color: T.inkL, fontStyle: "italic" }}>Saving…</span>
                     : updatedAt && <span style={{ fontSize: 11, color: T.inkL }}>Updated {updatedAt}</span>}
-            <button onClick={() => {
-              const backup = { all_actuals: allActuals, course_config: config, counsellors, exported_at: new Date().toISOString() };
-              const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a"); a.href = url;
-              a.download = `deposit-tracker-backup-${new Date().toISOString().slice(0,10)}.json`;
-              a.click(); URL.revokeObjectURL(url);
-            }} style={{ padding: "8px 16px", background: T.white, border: `1.5px solid ${T.border}`, borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, color: T.inkM, fontFamily: "inherit" }}>
-              ↓ Export
-            </button>
+            {editable && (
+              <button onClick={() => {
+                const backup = { all_actuals: allActuals, course_config: config, counsellors, exported_at: new Date().toISOString() };
+                const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a"); a.href = url;
+                a.download = `deposit-tracker-backup-${new Date().toISOString().slice(0,10)}.json`;
+                a.click(); URL.revokeObjectURL(url);
+              }} style={{ padding: "8px 16px", background: T.white, border: `1.5px solid ${T.border}`, borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, color: T.inkM, fontFamily: "inherit" }}>
+                ↓ Export
+              </button>
+            )}
             {editable && (
               <button onClick={() => setShowAddDeposit(true)}
                 style={{ padding: "8px 18px", background: T.purple, color: T.white, border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}>
@@ -1839,8 +1854,8 @@ export default function App() {
               </div>
               <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 7 }}>
                 {(() => {
-                  const primary = uniTotals.filter(u => config.find(c => c.id === u.id)?.hasTargets);
-                  const others = uniTotals.filter(u => !config.find(c => c.id === u.id)?.hasTargets);
+                  const primary = uniTotals.filter(u => PRIMARY_UNI_IDS.includes(u.id));
+                  const others = uniTotals.filter(u => !PRIMARY_UNI_IDS.includes(u.id));
                   const othersTotal = others.reduce((s, u) => s + u.total, 0);
                   const othersWithData = others.filter(u => u.total > 0).sort((a, b) => b.total - a.total);
                   return (
@@ -1905,13 +1920,10 @@ export default function App() {
               style={{ padding: "12px 22px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "inherit", borderRadius: "10px 10px 0 0", background: activeView === "dashboard" ? T.white : "transparent", color: activeView === "dashboard" ? T.purple : T.inkL, borderBottom: activeView === "dashboard" ? `3px solid ${T.purple}` : "3px solid transparent", transition: "all .15s", display: "flex", alignItems: "center", gap: 6 }}>
               📊 Dashboard
             </button>
-            {config.filter(u => u.hasTargets).map(u => uniTab(u, activeView === u.id))}
-            <button onClick={() => setActiveView("counsellors")}
-              style={{ padding: "12px 18px", border: "none", cursor: "pointer", fontWeight: 700, fontSize: 13, fontFamily: "inherit", borderRadius: "10px 10px 0 0", background: activeView === "counsellors" ? T.white : "transparent", color: activeView === "counsellors" ? T.purple : T.inkL, borderBottom: activeView === "counsellors" ? `3px solid ${T.purple}` : "3px solid transparent", transition: "all .15s" }}>
-              👥 Counsellors
-            </button>
+            {config.filter(u => PRIMARY_UNI_IDS.includes(u.id)).map(u => uniTab(u, activeView === u.id))}
+
             {(() => {
-              const others = config.filter(u => !u.hasTargets);
+              const others = config.filter(u => !PRIMARY_UNI_IDS.includes(u.id));
               if (!others.length) return null;
               const activeOther = others.find(u => u.id === activeView);
               return (
@@ -1938,19 +1950,12 @@ export default function App() {
           {/* DASHBOARD VIEW */}
           {activeView === "dashboard" && (
             <div style={{ background: T.white, borderRadius: "0 12px 12px 12px", border: `1px solid ${T.border}`, borderTop: "none", boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
-              <Dashboard config={config} allActuals={allActuals} />
-            </div>
-          )}
-
-          {/* COUNSELLORS VIEW */}
-          {activeView === "counsellors" && (
-            <div style={{ background: T.white, borderRadius: "0 12px 12px 12px", border: `1px solid ${T.border}`, borderTop: "none", boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
-              <CounsellorDashboard counsellors={counsellors} config={config} allActuals={allActuals} getActual={getActual} getActualByCounsellor={getActualByCounsellor} T={T} />
+              <Dashboard config={config} allActuals={allActuals} counsellors={counsellors} getActual={getActual} getActualByCounsellor={getActualByCounsellor} T={T} />
             </div>
           )}
 
           {/* UNIVERSITY TABLE VIEW */}
-          {activeView !== "dashboard" && activeView !== "counsellors" && (() => {
+          {activeView !== "dashboard" && (() => {
             const activeUniObj = config.find(u => u.id === activeView);
             if (!activeUniObj) return null;
             return (
