@@ -1585,7 +1585,7 @@ function LoginScreen() {
     setError("");
     const { error: authError } = await supabaseAuth.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: false },
+      options: { shouldCreateUser: true },
     });
     setLoading(false);
     if (authError) { setError(authError.message); } else { setSent(true); }
