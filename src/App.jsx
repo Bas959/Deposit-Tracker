@@ -371,6 +371,20 @@ const DEFAULT_CONFIG = [
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 const ni  = (v) => parseInt(v) || 0;
+
+const enrichConfig = (cfg) => cfg.map(uni => {
+  const international = {
+    bsbi:               { region: "international", country: "Germany" },
+    gisma:              { region: "international", country: "Germany" },
+    aura_labor:         { region: "international", country: "Spain" },
+    schiller:           { region: "international", country: "Germany" },
+    ue_applied_sciences:{ region: "international", country: "Germany" },
+    debrecen:           { region: "international", country: "Hungary" },
+  };
+  return international[uni.id]
+    ? { ...uni, ...international[uni.id] }
+    : { ...uni, region: "uk", country: "United Kingdom" };
+});
 const pct = (a, t) => t > 0 ? Math.min(100, Math.round((a / t) * 100)) : null;
 const uid = () => Math.random().toString(36).slice(2, 8);
 
@@ -791,6 +805,7 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
   const [filterCourse, setFilterCourse] = useState(null);
   const [showOtherUnis, setShowOtherUnis] = useState(false);
   const [courseTooltip, setCourseTooltip] = useState(null);
+  const [showCountryBreakdown, setShowCountryBreakdown] = useState(false);
 
   // ── Data helpers ────────────────────────────────────────────────────────────
   const getCourseActual = useCallback((uni, courseName, section = "core") => {
@@ -929,6 +944,29 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
   const pieData = othersVal > 0
     ? [...pieTop, { name: "Others", value: othersVal, color: "#CBD5E1", id: "others" }]
     : pieTop;
+
+  // 6. Regional data — UK vs International + country breakdown
+  const ukTotal   = config.filter(u => u.region === "uk" || !u.region).reduce((s, uni) => s + getUniTotal(uni), 0);
+  const intlTotal = config.filter(u => u.region === "international").reduce((s, uni) => s + getUniTotal(uni), 0);
+  const regionTotal = ukTotal + intlTotal;
+
+  const countryMap = {};
+  config.forEach(uni => {
+    const country = uni.country || "United Kingdom";
+    const total = getUniTotal(uni);
+    if (total > 0) {
+      if (!countryMap[country]) countryMap[country] = { country, total: 0, byUni: {} };
+      countryMap[country].total += total;
+      countryMap[country].byUni[uni.id] = (countryMap[country].byUni[uni.id] || 0) + total;
+    }
+  });
+  const countryData = Object.values(countryMap)
+    .sort((a, b) => b.total - a.total)
+    .map(c => {
+      const dominantUniId = Object.entries(c.byUni).sort((a, b) => b[1] - a[1])[0][0];
+      const dominantUni = config.find(u => u.id === dominantUniId);
+      return { ...c, color: dominantUni?.color || T.purple };
+    });
 
   // ── Chart styles (chartCard/chartTitle/chartSub defined at module level) ─────
 
@@ -1090,6 +1128,55 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
           collapsedWidgets={collapsedWidgets}
           toggleWidget={toggleWidget}
         />
+      </div>
+
+      {/* Regional Overview */}
+      <div style={{ marginTop: 16 }}>
+        <div style={{ ...chartCard }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: collapsedWidgets["regional-overview"] ? 0 : 16 }}>
+            <div>
+              <p style={chartTitle}>Regional Overview</p>
+              <p style={{ ...chartSub, margin: 0 }}>UK vs International deposit split</p>
+            </div>
+            <button onClick={() => toggleWidget("regional-overview")}
+              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: T.inkL, padding: "0 0 0 8px", flexShrink: 0, lineHeight: 1 }}>
+              {collapsedWidgets["regional-overview"] ? "▸" : "▾"}
+            </button>
+          </div>
+          {!collapsedWidgets["regional-overview"] && (
+            <div>
+              <div style={{ display: "flex", gap: 16, marginBottom: 16 }}>
+                <div style={{ flex: 1, background: T.purpleL, border: `1.5px solid ${T.purple}30`, borderRadius: 12, padding: "16px 20px" }}>
+                  <p style={{ margin: "0 0 4px", fontSize: 11, fontWeight: 700, color: T.purple, letterSpacing: ".07em", textTransform: "uppercase" }}>United Kingdom</p>
+                  <p style={{ margin: "0 0 4px", fontSize: 36, fontWeight: 800, color: T.purple, fontFamily: "ui-monospace, monospace", lineHeight: 1 }}>{ukTotal}</p>
+                  <p style={{ margin: 0, fontSize: 11, color: T.inkL }}>{regionTotal > 0 ? Math.round(ukTotal / regionTotal * 100) : 0}% of total</p>
+                </div>
+                <div style={{ flex: 1, background: T.tealL, border: `1.5px solid ${T.teal}30`, borderRadius: 12, padding: "16px 20px" }}>
+                  <p style={{ margin: "0 0 4px", fontSize: 11, fontWeight: 700, color: T.teal, letterSpacing: ".07em", textTransform: "uppercase" }}>International</p>
+                  <p style={{ margin: "0 0 4px", fontSize: 36, fontWeight: 800, color: T.teal, fontFamily: "ui-monospace, monospace", lineHeight: 1 }}>{intlTotal}</p>
+                  <p style={{ margin: 0, fontSize: 11, color: T.inkL }}>{regionTotal > 0 ? Math.round(intlTotal / regionTotal * 100) : 0}% of total</p>
+                </div>
+              </div>
+              <button onClick={() => setShowCountryBreakdown(v => !v)}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: T.inkL, padding: "0 0 8px", fontFamily: "inherit" }}>
+                {showCountryBreakdown ? "▾" : "▸"} Country breakdown
+              </button>
+              {showCountryBreakdown && countryData.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 4 }}>
+                  {countryData.map(c => (
+                    <div key={c.country} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 11, color: T.inkM, width: 130, textAlign: "right", flexShrink: 0 }}>{c.country}</span>
+                      <div style={{ flex: 1, background: T.border, borderRadius: "0 4px 4px 0", height: 18, overflow: "hidden" }}>
+                        <div style={{ width: `${Math.round(c.total / countryData[0].total * 100)}%`, height: "100%", background: c.color, borderRadius: "0 4px 4px 0", transition: "width .4s ease" }} />
+                      </div>
+                      <span style={{ fontSize: 11, fontWeight: 600, fontFamily: "ui-monospace, monospace", color: c.color, width: 28, flexShrink: 0 }}>{c.total}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Row 3: Top Courses + Target vs Actual */}
@@ -2155,7 +2242,7 @@ export default function App() {
       if (!data) { setLoading(false); return; }
 
       // Load config
-      let cfg = data.course_config && data.course_config.length ? data.course_config : DEFAULT_CONFIG;
+      let cfg = enrichConfig(data.course_config && data.course_config.length ? data.course_config : DEFAULT_CONFIG);
       setConfig(cfg);
       setActiveView("dashboard");
 
@@ -2181,7 +2268,7 @@ export default function App() {
     const ch = supabase.channel("tracker_rt")
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "tracker_data" }, ({ new: row }) => {
         if (editRef.current) return;
-        if (row.course_config?.length) setConfig(row.course_config);
+        if (row.course_config?.length) setConfig(enrichConfig(row.course_config));
         if (row.all_actuals && Object.keys(row.all_actuals).length) setAllActuals(row.all_actuals);
         if (row.logo_data) setLogo(row.logo_data);
         if (row.updated_at) setUpdatedAt(fmtDate(row.updated_at));
