@@ -9,6 +9,10 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY
 );
+const supabaseAuth = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
 const PASSCODE = import.meta.env.VITE_EDIT_PASSCODE;
 
 // ── TOKENS ────────────────────────────────────────────────────────────────────
@@ -1565,6 +1569,62 @@ function CourseManager({ config, onSave, onClose, counsellors, setCounsellors, e
   );
 }
 
+// ── LOGIN SCREEN ─────────────────────────────────────────────────────────────
+function LoginScreen() {
+  const [email,   setEmail]   = useState("");
+  const [loading, setLoading] = useState(false);
+  const [sent,    setSent]    = useState(false);
+  const [error,   setError]   = useState("");
+
+  const handleSubmit = async () => {
+    if (!email.endsWith("@studynow.org.uk")) {
+      setError("Access restricted to Study Now staff");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    const { error: authError } = await supabaseAuth.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: false },
+    });
+    setLoading(false);
+    if (authError) { setError(authError.message); } else { setSent(true); }
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+      <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 18, padding: "40px 44px", width: 380, boxShadow: "0 8px 32px rgba(108,39,232,.12)" }}>
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div style={{ width: 52, height: 52, borderRadius: 14, background: T.purple, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+            <span style={{ fontSize: 13, fontWeight: 900, color: T.white, letterSpacing: "-.5px" }}>SN</span>
+          </div>
+          <p style={{ margin: "0 0 2px", fontSize: 10, fontWeight: 700, color: T.inkL, letterSpacing: ".12em", textTransform: "uppercase" }}>Study Now</p>
+          <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: T.ink, letterSpacing: "-.03em" }}>Deposit Tracker</p>
+        </div>
+        {sent ? (
+          <p style={{ textAlign: "center", color: T.green, fontWeight: 600, fontSize: 14, margin: 0 }}>Login link sent — check your email</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <input
+              type="email"
+              placeholder="your@studynow.org.uk"
+              value={email}
+              onChange={e => { setEmail(e.target.value); setError(""); }}
+              onKeyDown={e => e.key === "Enter" && handleSubmit()}
+              style={{ padding: "11px 14px", border: `1.5px solid ${error ? T.red : T.border}`, borderRadius: 9, fontSize: 13, fontFamily: "inherit", outline: "none", color: T.ink, width: "100%", boxSizing: "border-box" }}
+            />
+            {error && <p style={{ margin: 0, color: T.red, fontSize: 12, fontWeight: 500 }}>{error}</p>}
+            <button onClick={handleSubmit} disabled={loading}
+              style={{ padding: "12px", background: T.purple, color: T.white, border: "none", borderRadius: 9, fontSize: 14, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: loading ? 0.7 : 1, width: "100%" }}>
+              {loading ? "Sending…" : "Send login link"}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── PASSCODE MODAL ────────────────────────────────────────────────────────────
 function PasscodeModal({ onSuccess, onClose }) {
   const [val, setVal] = useState(""), [err, setErr] = useState(false), [shake, setShake] = useState(false);
@@ -1955,6 +2015,7 @@ const PRIMARY_UNI_IDS = ["sunderland", "ysj", "uh"];
 
 // ── APP ───────────────────────────────────────────────────────────────────────
 export default function App() {
+  const [session,     setSession]     = useState(null);
   const [config,      setConfig]      = useState([]);
   const [allActuals,  setAllActuals]  = useState({});
   const [activeView,   setActiveView]   = useState("dashboard"); // "dashboard" | uniId
@@ -1984,6 +2045,12 @@ export default function App() {
       return next;
     });
   };
+
+  useEffect(() => {
+    supabaseAuth.auth.getSession().then(({ data: { session } }) => setSession(session));
+    const { data: { subscription } } = supabaseAuth.auth.onAuthStateChange((_event, session) => setSession(session));
+    return () => subscription.unsubscribe();
+  }, []);
 
   const refs    = useRef({});
   refs.current  = { allActuals, config, logo };
@@ -2074,11 +2141,16 @@ export default function App() {
     setSaving(true);
     timer.current = setTimeout(async () => {
       const now = new Date().toISOString(), r = refs.current;
-      await supabase.from("tracker_data").update({
-        all_actuals: r.allActuals, course_config: r.config,
-        counsellors: counsellors,
-        logo_data: r.logo, updated_at: now,
-      }).eq("id", 1);
+      await fetch("/api/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          passcode: PASSCODE,
+          allActuals: r.allActuals,
+          config: r.config,
+          counsellors,
+        }),
+      });
       setSaving(false);
       setUpdatedAt(fmtDate(now));
     }, 700);
@@ -2159,6 +2231,8 @@ export default function App() {
     </button>
   );
 
+  if (session === null) return <LoginScreen />;
+
   if (loading) return (
     <div style={{ minHeight: "100vh", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 14 }}>
       <div style={{ width: 52, height: 52, borderRadius: 14, background: T.purple, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>📊</div>
@@ -2212,10 +2286,13 @@ export default function App() {
             )}
             {editable
               ? <button onClick={() => setEditable(false)} style={{ background: T.green, border: "none", color: T.white, padding: "8px 18px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: "inherit" }}>🔓 Lock</button>
-              : <button onClick={() => setShowModal(true)} style={{ background: T.purple, border: "none", color: T.white, padding: "8px 18px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: "inherit", transition: "background .15s" }}
-                  onMouseEnter={e => e.currentTarget.style.background = "#5720C8"}
-                  onMouseLeave={e => e.currentTarget.style.background = T.purple}
-                >🔒 Edit</button>
+              : <>
+                  <button onClick={() => setShowModal(true)} style={{ background: T.purple, border: "none", color: T.white, padding: "8px 18px", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: 12, fontFamily: "inherit", transition: "background .15s" }}
+                    onMouseEnter={e => e.currentTarget.style.background = "#5720C8"}
+                    onMouseLeave={e => e.currentTarget.style.background = T.purple}
+                  >🔒 Edit</button>
+                  <button onClick={() => supabaseAuth.auth.signOut()} style={{ background: "none", border: "none", color: T.inkL, padding: "8px 10px", cursor: "pointer", fontSize: 12, fontFamily: "inherit", textDecoration: "underline" }}>Sign out</button>
+                </>
             }
           </div>
         </div>
