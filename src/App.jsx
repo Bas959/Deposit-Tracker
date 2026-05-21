@@ -833,10 +833,9 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
     ? uniBarData
     : config.filter(u => u.hasTargets).map(u => ({ name: u.shortName, value: 0, color: u.color, id: u.id }));
 
-  // 2. Top courses — filtered by selected university
+  // 2. Top courses — all institutions, per-institution breakdown for tooltip
   const courseMap = {};
   config.forEach(uni => {
-    if (filterUni && uni.id !== filterUni) return;
     ["core", "other"].forEach(sec => {
       const courses = sec === "core" ? uni.coreCourses : (uni.otherCourses || []);
       courses.forEach(c => {
