@@ -1621,6 +1621,7 @@ function CounsellorDashboard({ counsellors, config, allActuals, getActual, getAc
     )
   }));
   const maxTotal = Math.max(...leaderboard.map(c => c.total), 1);
+  const [tooltip, setTooltip] = useState(null);
 
   return (
     <div style={{ ...chartCard }}>
@@ -1643,51 +1644,46 @@ function CounsellorDashboard({ counsellors, config, allActuals, getActual, getAc
             </div>
           ))}
         </div>
-        {(() => {
-          const [tooltip, setTooltip] = React.useState(null);
-          return (
-            <div style={{ position: "relative" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
-                {leaderboard.map(c => {
-                  const segments = activeUnis.filter(uni => c.byUni[uni.id] > 0);
-                  return (
-                    <div key={c.name} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ width: 150, textAlign: "right", fontSize: 11, color: T.inkM, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {c.name}
-                      </span>
-                      <div style={{ flex: 1, display: "flex", height: 22, borderRadius: "0 4px 4px 0", overflow: "hidden", background: T.border }}>
-                        {segments.map((uni, i) => (
-                          <div key={uni.id}
-                            onMouseEnter={e => setTooltip({ x: e.clientX, y: e.clientY, uniName: uni.shortName, count: c.byUni[uni.id], color: uni.color })}
-                            onMouseMove={e => setTooltip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
-                            onMouseLeave={() => setTooltip(null)}
-                            style={{
-                              width: `${(c.byUni[uni.id] / maxTotal) * 100}%`,
-                              height: "100%",
-                              background: uni.color,
-                              cursor: "default",
-                              borderRight: i < segments.length - 1 ? "1px solid rgba(255,255,255,.3)" : "none",
-                            }} />
-                        ))}
-                      </div>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: T.inkM, fontFamily: "ui-monospace, monospace", width: 28, flexShrink: 0, textAlign: "right" }}>
-                        {c.total}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-              {tooltip && (
-                <div style={{ position: "fixed", left: tooltip.x + 12, top: tooltip.y - 36, background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, padding: "6px 12px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,.12)", pointerEvents: "none", zIndex: 300, display: "flex", alignItems: "center", gap: 6 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: 2, background: tooltip.color, flexShrink: 0 }} />
-                  <span style={{ color: T.ink, fontWeight: 600 }}>{tooltip.uniName}</span>
-                  <span style={{ color: T.inkL }}>·</span>
-                  <span style={{ fontWeight: 700, color: tooltip.color, fontFamily: "ui-monospace, monospace" }}>{tooltip.count}</span>
+        <div style={{ position: "relative" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+            {leaderboard.map(c => {
+              const segments = activeUnis.filter(uni => c.byUni[uni.id] > 0);
+              return (
+                <div key={c.name} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ width: 150, textAlign: "right", fontSize: 11, color: T.inkM, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {c.name}
+                  </span>
+                  <div style={{ flex: 1, display: "flex", height: 22, borderRadius: "0 4px 4px 0", overflow: "hidden", background: T.border }}>
+                    {segments.map((uni, i) => (
+                      <div key={uni.id}
+                        onMouseEnter={e => setTooltip({ x: e.clientX, y: e.clientY, uniName: uni.shortName, count: c.byUni[uni.id], color: uni.color })}
+                        onMouseMove={e => setTooltip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
+                        onMouseLeave={() => setTooltip(null)}
+                        style={{
+                          width: `${(c.byUni[uni.id] / maxTotal) * 100}%`,
+                          height: "100%",
+                          background: uni.color,
+                          cursor: "default",
+                          borderRight: i < segments.length - 1 ? "1px solid rgba(255,255,255,.3)" : "none",
+                        }} />
+                    ))}
+                  </div>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: T.inkM, fontFamily: "ui-monospace, monospace", width: 28, flexShrink: 0, textAlign: "right" }}>
+                    {c.total}
+                  </span>
                 </div>
-              )}
+              );
+            })}
+          </div>
+          {tooltip && (
+            <div style={{ position: "fixed", left: tooltip.x + 12, top: tooltip.y - 36, background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, padding: "6px 12px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,.12)", pointerEvents: "none", zIndex: 300, display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ width: 8, height: 8, borderRadius: 2, background: tooltip.color, flexShrink: 0 }} />
+              <span style={{ color: T.ink, fontWeight: 600 }}>{tooltip.uniName}</span>
+              <span style={{ color: T.inkL }}>·</span>
+              <span style={{ fontWeight: 700, color: tooltip.color, fontFamily: "ui-monospace, monospace" }}>{tooltip.count}</span>
             </div>
-          );
-        })()}
+          )}
+        </div>
       </>)}
     </div>
   );
