@@ -905,13 +905,13 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
         c3: uni.campus3?.label,
         c1Total,
         c2Total,
-        c3Total,
+        c3Total: c3Key && c3Total > 0 ? c3Total : undefined,
         c1Color: uni.campus1.color || T.purple,
         c2Color: uni.campus2?.color || T.teal,
-        c3Color: uni.campus3?.color || T.amber,
+        c3Color: uni.campus3?.color || "#6B7280",
       };
     })
-    .filter(u => u.c1Total + u.c2Total + u.c3Total > 0);
+    .filter(u => u.c1Total + u.c2Total + (u.c3Total || 0) > 0);
 
   // 5. Pie data — university share
   const grandTotal = allUniData.reduce((s, u) => s + u.value, 0);
@@ -1175,10 +1175,18 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
                     <div style={{ width: 10, height: 10, borderRadius: 2, background: d.c1Color }} />
                     <span style={{ fontSize: 11, color: T.inkM }}>{d.c1}</span>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: 2, background: d.c2Color }} />
-                    <span style={{ fontSize: 11, color: T.inkM }}>{d.c2}</span>
-                  </div>
+                  {d.c2 && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: 2, background: d.c2Color }} />
+                      <span style={{ fontSize: 11, color: T.inkM }}>{d.c2}</span>
+                    </div>
+                  )}
+                  {d.c3 && d.c3Total > 0 && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: 2, background: d.c3Color }} />
+                      <span style={{ fontSize: 11, color: T.inkM }}>{d.c3}</span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -1191,12 +1199,13 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
                   if (!active || !payload?.length) return null;
                   const entry = campusData.find(d => d.name === label);
                   if (!entry) return null;
+                  const campusLabel = { c1Total: entry.c1, c2Total: entry.c2, c3Total: entry.c3 };
                   return (
                     <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, padding: "10px 14px", fontSize: 12 }}>
                       <p style={{ fontWeight: 700, color: T.ink, marginBottom: 6 }}>{label}</p>
                       {payload.map((p, i) => (
                         <p key={i} style={{ color: p.fill, margin: "2px 0" }}>
-                          {i === 0 ? entry.c1 : entry.c2}: <strong>{p.value}</strong>
+                          {campusLabel[p.dataKey] || p.name}: <strong>{p.value}</strong>
                         </p>
                       ))}
                     </div>
@@ -1206,9 +1215,13 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
                   {campusData.map((entry, i) => <Cell key={i} fill={entry.c1Color} />)}
                   <LabelList dataKey="c1Total" position="inside" style={{ fontSize: 11, fill: "#fff", fontWeight: 600 }} />
                 </RBar>
-                <RBar dataKey="c2Total" stackId="s" name={campusData[0]?.c2 || "Campus 2"} radius={[4, 4, 0, 0]}>
+                <RBar dataKey="c2Total" stackId="s" name={campusData[0]?.c2 || "Campus 2"} radius={[0, 0, 0, 0]}>
                   {campusData.map((entry, i) => <Cell key={i} fill={entry.c2Color} />)}
                   <LabelList dataKey="c2Total" position="inside" style={{ fontSize: 11, fill: "#fff", fontWeight: 600 }} />
+                </RBar>
+                <RBar dataKey="c3Total" stackId="s" name="Campus 3" radius={[4, 4, 0, 0]}>
+                  {campusData.map((entry, i) => <Cell key={i} fill={entry.c3Color || "#6B7280"} />)}
+                  <LabelList dataKey="c3Total" position="inside" style={{ fontSize: 11, fill: "#fff", fontWeight: 600 }} />
                 </RBar>
               </BarChart>
             </ResponsiveContainer>
