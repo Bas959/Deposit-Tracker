@@ -793,9 +793,10 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
 
   // ── Data helpers ────────────────────────────────────────────────────────────
   const getCourseActual = useCallback((uni, courseName, section = "core") => {
-    const c1 = uni.campus1.key, c2 = uni.campus2?.key;
+    const c1 = uni.campus1.key, c2 = uni.campus2?.key, c3 = uni.campus3?.key;
     return getActual(allActuals, uni.id, section, courseName, c1)
-         + (c2 ? getActual(allActuals, uni.id, section, courseName, c2) : 0);
+         + (c2 ? getActual(allActuals, uni.id, section, courseName, c2) : 0)
+         + (c3 ? getActual(allActuals, uni.id, section, courseName, c3) : 0);
   }, [allActuals]);
 
   const getUniTotal = useCallback((uni) => {
@@ -861,47 +862,56 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
     .map(uni => {
       const target = uni.coreCourses.reduce((s, c) => {
         const t = c.targets || {};
-        return s + ni(t[uni.campus1.key]) + ni(uni.campus2 ? t[uni.campus2.key] : 0);
+        return s + ni(t[uni.campus1.key]) + ni(uni.campus2 ? t[uni.campus2.key] : 0) + ni(uni.campus3 ? t[uni.campus3.key] : 0);
       }, 0);
       const actual = uni.coreCourses.reduce((s, c) => {
         const name = typeof c === "string" ? c : c.name;
         const lt = ni(c.targets?.[uni.campus1.key]);
         const st = uni.campus2 ? ni(c.targets?.[uni.campus2.key]) : 0;
+        const tt = uni.campus3 ? ni(c.targets?.[uni.campus3.key]) : 0;
         return s + (lt > 0 ? getActual(allActuals, uni.id, "core", name, uni.campus1.key) : 0)
-                 + (st > 0 && uni.campus2 ? getActual(allActuals, uni.id, "core", name, uni.campus2.key) : 0);
+                 + (st > 0 && uni.campus2 ? getActual(allActuals, uni.id, "core", name, uni.campus2.key) : 0)
+                 + (tt > 0 && uni.campus3 ? getActual(allActuals, uni.id, "core", name, uni.campus3.key) : 0);
       }, 0);
       return { name: uni.shortName, Actual: actual, Target: target, color: uni.color };
     });
 
   // 4. Campus split — unis with 2 campuses
   const campusData = config
-    .filter(u => u.campus2)
+    .filter(u => u.campus2 || u.campus3)
     .map(uni => {
       const c1Key = uni.campus1.key;
-      const c2Key = uni.campus2.key;
+      const c2Key = uni.campus2?.key;
+      const c3Key = uni.campus3?.key;
       let c1Total = 0;
       let c2Total = 0;
+      let c3Total = 0;
       uni.coreCourses.forEach(c => {
         const name = typeof c === "string" ? c : c.name;
         c1Total += getActual(allActuals, uni.id, "core", name, c1Key);
-        c2Total += getActual(allActuals, uni.id, "core", name, c2Key);
+        if (c2Key) c2Total += getActual(allActuals, uni.id, "core", name, c2Key);
+        if (c3Key) c3Total += getActual(allActuals, uni.id, "core", name, c3Key);
       });
       (uni.otherCourses || []).forEach(c => {
         const name = typeof c === "string" ? c : c.name;
         c1Total += getActual(allActuals, uni.id, "other", name, c1Key);
-        c2Total += getActual(allActuals, uni.id, "other", name, c2Key);
+        if (c2Key) c2Total += getActual(allActuals, uni.id, "other", name, c2Key);
+        if (c3Key) c3Total += getActual(allActuals, uni.id, "other", name, c3Key);
       });
       return {
         name: uni.shortName,
         c1: uni.campus1.label,
-        c2: uni.campus2.label,
+        c2: uni.campus2?.label,
+        c3: uni.campus3?.label,
         c1Total,
         c2Total,
+        c3Total,
         c1Color: uni.campus1.color || T.purple,
-        c2Color: uni.campus2.color || T.teal,
+        c2Color: uni.campus2?.color || T.teal,
+        c3Color: uni.campus3?.color || T.amber,
       };
     })
-    .filter(u => u.c1Total + u.c2Total > 0);
+    .filter(u => u.c1Total + u.c2Total + u.c3Total > 0);
 
   // 5. Pie data — university share
   const grandTotal = allUniData.reduce((s, u) => s + u.value, 0);
@@ -1657,7 +1667,7 @@ function CounsellorDashboard({ counsellors, config, allActuals, getActual, getAc
     const byUni = {};
     let total = 0;
     config.forEach(uni => {
-      const c1k = uni.campus1.key, c2k = uni.campus2?.key;
+      const c1k = uni.campus1?.key, c2k = uni.campus2?.key, c3k = uni.campus3?.key;
       let uniTotal = 0;
       ["core", "other"].forEach(sec => {
         const courses = sec === "core" ? uni.coreCourses : (uni.otherCourses || []);
@@ -1665,6 +1675,7 @@ function CounsellorDashboard({ counsellors, config, allActuals, getActual, getAc
           const name = typeof c === "string" ? c : c.name;
           uniTotal += getActualByCounsellor(allActuals, uni.id, sec, name, c1k, cn);
           if (c2k) uniTotal += getActualByCounsellor(allActuals, uni.id, sec, name, c2k, cn);
+          if (c3k) uniTotal += getActualByCounsellor(allActuals, uni.id, sec, name, c3k, cn);
         });
       });
       if (uniTotal > 0) { byUni[uni.id] = uniTotal; total += uniTotal; }
@@ -1762,7 +1773,7 @@ function DataManager({ config, allActuals, setAllActuals, onClose, scheduleSave,
         const courses = section === "core" ? (uni.coreCourses || []) : (uni.otherCourses || []);
         courses.forEach(c => {
           const courseName = typeof c === "string" ? c : c.name;
-          [uni.campus1, uni.campus2].filter(Boolean).forEach(campus => {
+          [uni.campus1, uni.campus2, uni.campus3].filter(Boolean).forEach(campus => {
             const val = allActuals?.[uni.id]?.[section]?.[courseName]?.[campus.key];
             if (!val) return;
             if (typeof val === "number") {
@@ -2187,29 +2198,33 @@ export default function App() {
 
   // ── Computed totals ──────────────────────────────────────────────────────────
   const uniTotals = config.map(uni => {
-    const c1 = uni.campus1, c2 = uni.campus2;
+    const c1 = uni.campus1, c2 = uni.campus2, c3 = uni.campus3;
     // Full actuals — all campuses, core + other (for Overall Deposits card)
     const fullCore = uni.coreCourses.reduce((s, c) => {
       const name = typeof c === "string" ? c : c.name;
       return s + getActual(allActuals, uni.id, "core", name, c1.key)
-               + (c2 ? getActual(allActuals, uni.id, "core", name, c2.key) : 0);
+               + (c2 ? getActual(allActuals, uni.id, "core", name, c2.key) : 0)
+               + (c3 ? getActual(allActuals, uni.id, "core", name, c3.key) : 0);
     }, 0);
     const fullOther = (uni.otherCourses || []).reduce((s, c) => {
       return s + getActual(allActuals, uni.id, "other", c, c1.key)
-               + (c2 ? getActual(allActuals, uni.id, "other", c, c2.key) : 0);
+               + (c2 ? getActual(allActuals, uni.id, "other", c, c2.key) : 0)
+               + (c3 ? getActual(allActuals, uni.id, "other", c, c3.key) : 0);
     }, 0);
     // Core actuals — only targeted campuses (for Seat Caps progress)
     const coreActual = uni.coreCourses.reduce((s, c) => {
       const name = typeof c === "string" ? c : c.name;
       const lt = ni(c.targets?.[c1.key]);
       const st = c2 ? ni(c.targets?.[c2.key]) : 0;
+      const tt = c3 ? ni(c.targets?.[c3.key]) : 0;
       return s + (uni.hasTargets
         ? (lt > 0 ? getActual(allActuals, uni.id, "core", name, c1.key) : 0)
           + (c2 && st > 0 ? getActual(allActuals, uni.id, "core", name, c2.key) : 0)
+          + (c3 && tt > 0 ? getActual(allActuals, uni.id, "core", name, c3.key) : 0)
         : getActual(allActuals, uni.id, "core", name, c1.key))
     }, 0);
     const target = uni.hasTargets ? uni.coreCourses.reduce((s, c) =>
-      s + ni(c.targets?.[c1.key]) + (c2 ? ni(c.targets?.[c2.key]) : 0), 0) : 0;
+      s + ni(c.targets?.[c1.key]) + (c2 ? ni(c.targets?.[c2.key]) : 0) + (c3 ? ni(c.targets?.[c3.key]) : 0), 0) : 0;
     return {
       id: uni.id, name: uni.name, shortName: uni.shortName, color: uni.color,
       total: fullCore + fullOther,
@@ -2453,6 +2468,7 @@ export default function App() {
           const campuses = selUni ? [
             { key: selUni.campus1.key, label: selUni.campus1.label },
             ...(selUni.campus2 ? [{ key: selUni.campus2.key, label: selUni.campus2.label }] : []),
+            ...(selUni.campus3 ? [{ key: selUni.campus3.key, label: selUni.campus3.label }] : []),
           ] : [];
           const isValid = depositForm.counsellor && depositForm.uniId && depositForm.courseName && depositForm.campusKey && depositForm.count >= 1;
           const sel = (field, value, extra = {}) => setDepositForm(p => ({ ...p, [field]: value, ...extra }));
