@@ -1613,7 +1613,13 @@ function CounsellorDashboard({ counsellors, config, allActuals, getActual, getAc
   }).filter(c => c.total > 0).sort((a, b) => b.total - a.total);
 
   const activeUnis = config.filter(uni => leaderboard.some(c => c.byUni[uni.id] > 0));
-  const chartData = leaderboard.map(c => ({ name: c.name, total: c.total, ...c.byUni }));
+  const chartData = leaderboard.map(c => ({
+    name: c.name,
+    total: c.total,
+    ...Object.fromEntries(
+      activeUnis.map(uni => [uni.id, c.byUni[uni.id] > 0 ? c.byUni[uni.id] : undefined])
+    )
+  }));
   const chartHeight = Math.max(leaderboard.length * 48 + 60, 120);
 
   const CustomTooltip = ({ active, payload, label }) => {
