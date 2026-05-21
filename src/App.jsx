@@ -790,6 +790,7 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
   const [filterUni,    setFilterUni]    = useState(null);
   const [filterCourse, setFilterCourse] = useState(null);
   const [showOtherUnis, setShowOtherUnis] = useState(false);
+  const [courseTooltip, setCourseTooltip] = useState(null);
 
   // ── Data helpers ────────────────────────────────────────────────────────────
   const getCourseActual = useCallback((uni, courseName, section = "core") => {
@@ -833,28 +834,34 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
     : config.filter(u => u.hasTargets).map(u => ({ name: u.shortName, value: 0, color: u.color, id: u.id }));
 
   // 2. Top courses — filtered by selected university
-  const allCourses = [];
+  const courseMap = {};
   config.forEach(uni => {
     if (filterUni && uni.id !== filterUni) return;
-    uni.coreCourses.forEach(c => {
-      const name = typeof c === "string" ? c : c.name;
-      const val  = getCourseActual(uni, name, "core");
-      if (val > 0) allCourses.push({ name, value: val, color: uni.color, uni: uni.shortName });
-    });
-    (uni.otherCourses || []).forEach(name => {
-      const val = getCourseActual(uni, name, "other");
-      if (val > 0) allCourses.push({ name, value: val, color: uni.color, uni: uni.shortName });
+    ["core", "other"].forEach(sec => {
+      const courses = sec === "core" ? uni.coreCourses : (uni.otherCourses || []);
+      courses.forEach(c => {
+        const name = typeof c === "string" ? c : c.name;
+        const campuses = [uni.campus1, uni.campus2, uni.campus3].filter(Boolean);
+        let uniTotal = 0;
+        campuses.forEach(campus => {
+          uniTotal += getActual(allActuals, uni.id, sec, name, campus.key);
+        });
+        if (uniTotal > 0) {
+          if (!courseMap[name]) courseMap[name] = { name, total: 0, byUni: {} };
+          courseMap[name].total += uniTotal;
+          courseMap[name].byUni[uni.id] = (courseMap[name].byUni[uni.id] || 0) + uniTotal;
+        }
+      });
     });
   });
-  // Merge same-name courses across unis, sum values
-  const courseMap = {};
-  allCourses.forEach(({ name, value, color, uni }) => {
-    if (!courseMap[name]) courseMap[name] = { name, value: 0, color, uni };
-    courseMap[name].value += value;
-  });
-  const courseBarData = Object.values(courseMap)
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 15);
+  const topCourses = Object.values(courseMap)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 15)
+    .map(c => {
+      const dominantUniId = Object.entries(c.byUni).sort((a, b) => b[1] - a[1])[0][0];
+      const dominantUni = config.find(u => u.id === dominantUniId);
+      return { ...c, dominantColor: dominantUni?.color || T.purple };
+    });
 
   // 3. Target vs Actual — only for unis with targets
   const targetData = config
@@ -1103,23 +1110,48 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
               {collapsedWidgets["top-courses"] ? "▸" : "▾"}
             </button>
           </div>
-          {!collapsedWidgets["top-courses"] && <ResponsiveContainer width="100%" height={Math.max(courseBarData.length * 28, 200)}>
-            <BarChart data={courseBarData} layout="vertical" margin={{ top: 0, right: 40, left: 4, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={T.border} horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 10, fill: T.inkL }} axisLine={false} tickLine={false} />
-              <YAxis type="category" dataKey="name" width={200} tick={{ fontSize: 11, fill: T.inkM }} axisLine={false} tickLine={false}
-                tickFormatter={v => v.length > 30 ? v.slice(0, 30) + "…" : v} />
-              <Tooltip content={<CustomTooltip />} />
-              <RBar dataKey="value" radius={[0, 6, 6, 0]} cursor="pointer"
-                onClick={d => setFilterCourse(prev => prev === d.name ? null : d.name)}>
-                {courseBarData.map((entry, i) => (
-                  <Cell key={i} fill={entry.color}
-                    opacity={filterCourse && filterCourse !== entry.name ? 0.3 : 1} />
-                ))}
-                <LabelList dataKey="value" position="right" style={{ fontSize: 11, fill: T.inkM, fontWeight: 600 }} />
-              </RBar>
-            </BarChart>
-          </ResponsiveContainer>}
+          {!collapsedWidgets["top-courses"] && (
+            <div style={{ position: "relative" }}>
+              <ResponsiveContainer width="100%" height={Math.max(topCourses.length * 28, 200)}>
+                <BarChart data={topCourses} layout="vertical" margin={{ top: 0, right: 40, left: 4, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={T.border} horizontal={false} />
+                  <XAxis type="number" tick={{ fontSize: 10, fill: T.inkL }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="name" width={200} tick={{ fontSize: 11, fill: T.inkM }} axisLine={false} tickLine={false}
+                    tickFormatter={v => v.length > 30 ? v.slice(0, 30) + "…" : v} />
+                  <RBar dataKey="total" radius={[0, 6, 6, 0]} cursor="pointer"
+                    onClick={d => setFilterCourse(prev => prev === d.name ? null : d.name)}
+                    onMouseEnter={(data, index, e) => { if (e) setCourseTooltip({ x: e.clientX, y: e.clientY, entry: data }); }}
+                    onMouseMove={(data, index, e) => { if (e) setCourseTooltip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null); }}
+                    onMouseLeave={() => setCourseTooltip(null)}>
+                    {topCourses.map((entry, i) => (
+                      <Cell key={i} fill={entry.dominantColor}
+                        opacity={filterCourse && filterCourse !== entry.name ? 0.3 : 1} />
+                    ))}
+                    <LabelList dataKey="total" position="right" style={{ fontSize: 11, fill: T.inkM, fontWeight: 600 }} />
+                  </RBar>
+                </BarChart>
+              </ResponsiveContainer>
+              {courseTooltip && (
+                <div style={{ position: "fixed", left: courseTooltip.x + 12, top: courseTooltip.y - 36, background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, padding: "8px 12px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,.12)", pointerEvents: "none", zIndex: 300 }}>
+                  <p style={{ margin: "0 0 6px", fontWeight: 700, color: T.ink }}>{courseTooltip.entry.name}</p>
+                  {Object.entries(courseTooltip.entry.byUni)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([uniId, count]) => {
+                      const uni = config.find(u => u.id === uniId);
+                      return (
+                        <div key={uniId} style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+                          <div style={{ width: 8, height: 8, borderRadius: 2, background: uni?.color, flexShrink: 0 }} />
+                          <span style={{ color: T.inkM }}>{uni?.shortName}</span>
+                          <span style={{ color: T.inkL }}>·</span>
+                          <span style={{ fontWeight: 700, color: uni?.color, fontFamily: "ui-monospace, monospace" }}>{count}</span>
+                        </div>
+                      );
+                    })
+                  }
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Target vs Actual */}
