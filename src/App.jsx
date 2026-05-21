@@ -1620,20 +1620,7 @@ function CounsellorDashboard({ counsellors, config, allActuals, getActual, getAc
       activeUnis.map(uni => [uni.id, c.byUni[uni.id] > 0 ? c.byUni[uni.id] : undefined])
     )
   }));
-  const chartHeight = Math.max(leaderboard.length * 48 + 60, 120);
-
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (!active || !payload?.length) return null;
-    const entry = leaderboard.find(c => c.name === label);
-    return (
-      <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, padding: "10px 14px", fontSize: 12 }}>
-        <p style={{ fontWeight: 700, color: T.ink, marginBottom: 6 }}>{label} — {entry?.total} total</p>
-        {payload.filter(p => p.value > 0).map((p, i) => (
-          <p key={i} style={{ color: p.fill, margin: "2px 0" }}>{p.name}: <strong>{p.value}</strong></p>
-        ))}
-      </div>
-    );
-  };
+  const maxTotal = Math.max(...leaderboard.map(c => c.total), 1);
 
   return (
     <div style={{ ...chartCard }}>
@@ -1656,22 +1643,51 @@ function CounsellorDashboard({ counsellors, config, allActuals, getActual, getAc
             </div>
           ))}
         </div>
-        <ResponsiveContainer width="100%" height={chartHeight}>
-          <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 48, left: 4, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={T.border} horizontal={false} />
-            <XAxis type="number" tick={{ fontSize: 10, fill: T.inkL }} axisLine={false} tickLine={false} />
-            <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11, fill: T.inkM }} axisLine={false} tickLine={false} />
-            <Tooltip content={<CustomTooltip />} />
-            {activeUnis.map((uni, i) => (
-              <RBar key={uni.id} dataKey={uni.id} name={uni.shortName} stackId="stack"
-                fill={uni.color} radius={i === activeUnis.length - 1 ? [0, 4, 4, 0] : [0, 0, 0, 0]}>
-                {i === activeUnis.length - 1 && (
-                  <LabelList dataKey="total" position="right" style={{ fontSize: 11, fill: T.inkM, fontWeight: 600 }} />
-                )}
-              </RBar>
-            ))}
-          </BarChart>
-        </ResponsiveContainer>
+        {(() => {
+          const [tooltip, setTooltip] = React.useState(null);
+          return (
+            <div style={{ position: "relative" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+                {leaderboard.map(c => {
+                  const segments = activeUnis.filter(uni => c.byUni[uni.id] > 0);
+                  return (
+                    <div key={c.name} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ width: 150, textAlign: "right", fontSize: 11, color: T.inkM, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {c.name}
+                      </span>
+                      <div style={{ flex: 1, display: "flex", height: 22, borderRadius: "0 4px 4px 0", overflow: "hidden", background: T.border }}>
+                        {segments.map((uni, i) => (
+                          <div key={uni.id}
+                            onMouseEnter={e => setTooltip({ x: e.clientX, y: e.clientY, uniName: uni.shortName, count: c.byUni[uni.id], color: uni.color })}
+                            onMouseMove={e => setTooltip(prev => prev ? { ...prev, x: e.clientX, y: e.clientY } : null)}
+                            onMouseLeave={() => setTooltip(null)}
+                            style={{
+                              width: `${(c.byUni[uni.id] / maxTotal) * 100}%`,
+                              height: "100%",
+                              background: uni.color,
+                              cursor: "default",
+                              borderRight: i < segments.length - 1 ? "1px solid rgba(255,255,255,.3)" : "none",
+                            }} />
+                        ))}
+                      </div>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: T.inkM, fontFamily: "ui-monospace, monospace", width: 28, flexShrink: 0, textAlign: "right" }}>
+                        {c.total}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              {tooltip && (
+                <div style={{ position: "fixed", left: tooltip.x + 12, top: tooltip.y - 36, background: T.white, border: `1px solid ${T.border}`, borderRadius: 8, padding: "6px 12px", fontSize: 12, boxShadow: "0 4px 12px rgba(0,0,0,.12)", pointerEvents: "none", zIndex: 300, display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 2, background: tooltip.color, flexShrink: 0 }} />
+                  <span style={{ color: T.ink, fontWeight: 600 }}>{tooltip.uniName}</span>
+                  <span style={{ color: T.inkL }}>·</span>
+                  <span style={{ fontWeight: 700, color: tooltip.color, fontFamily: "ui-monospace, monospace" }}>{tooltip.count}</span>
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </>)}
     </div>
   );
