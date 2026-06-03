@@ -372,19 +372,6 @@ const DEFAULT_CONFIG = [
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 const ni  = (v) => parseInt(v) || 0;
 
-const enrichConfig = (cfg) => cfg.map(uni => {
-  const international = {
-    bsbi:               { region: "international", country: "Germany" },
-    gisma:              { region: "international", country: "Germany" },
-    aura_labor:         { region: "international", country: "Spain" },
-    schiller:           { region: "international", country: "Germany" },
-    ue_applied_sciences:{ region: "international", country: "Germany" },
-    debrecen:           { region: "international", country: "Hungary" },
-  };
-  return international[uni.id]
-    ? { ...uni, ...international[uni.id] }
-    : { ...uni, region: "uk", country: "United Kingdom" };
-});
 const pct = (a, t) => t > 0 ? Math.min(100, Math.round((a / t) * 100)) : null;
 const uid = () => Math.random().toString(36).slice(2, 8);
 
@@ -1362,7 +1349,7 @@ function CourseManager({ config, onSave, onClose, counsellors, setCounsellors, e
   const [newCounsellorName, setNewCounsellorName] = useState("");
   const [addingTo, setAddingTo]   = useState(null); // uniId
   const [addingUni, setAddingUni] = useState(false);
-  const [newUni, setNewUni]       = useState({ name: "", shortName: "", color: T.teal, intakeLabel: "", hasTargets: true, campus1: { key: "", label: "", color: T.purple }, campus2: { key: "", label: "", color: T.teal } });
+  const [newUni, setNewUni]       = useState({ name: "", shortName: "", color: T.teal, intakeLabel: "", hasTargets: true, region: "uk", country: "United Kingdom", campus1: { key: "", label: "", color: T.purple }, campus2: { key: "", label: "", color: T.teal } });
   const [editingCourse, setEditingCourse] = useState(null); // { uniId, section, index }
   const [editingUni, setEditingUni] = useState(null); // holds the uni object being edited
   const [saving, setSaving]       = useState(false);
@@ -1391,11 +1378,11 @@ function CourseManager({ config, onSave, onClose, counsellors, setCounsellors, e
   };
 
   const addUniversity = () => {
-    if (!newUni.name.trim() || !newUni.campus1.key.trim()) return;
+    if (!newUni.name.trim() || !newUni.campus1.key.trim() || !newUni.region || !newUni.country.trim()) return;
     const id = newUni.name.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
     setDraft(d => [...d, { ...newUni, id, coreCourses: [], otherCourses: [], campus2: newUni.hasTargets ? newUni.campus2 : null }]);
     setAddingUni(false);
-    setNewUni({ name: "", shortName: "", color: T.teal, intakeLabel: "", hasTargets: true, campus1: { key: "", label: "", color: T.purple }, campus2: { key: "", label: "", color: T.teal } });
+    setNewUni({ name: "", shortName: "", color: T.teal, intakeLabel: "", hasTargets: true, region: "uk", country: "United Kingdom", campus1: { key: "", label: "", color: T.purple }, campus2: { key: "", label: "", color: T.teal } });
   };
 
   const handleSave = async () => {
@@ -1511,6 +1498,20 @@ function CourseManager({ config, onSave, onClose, counsellors, setCounsellors, e
                   <label htmlFor="editHasTargets" style={{ fontSize: 12, color: T.inkM, cursor: "pointer" }}>Has seat cap targets</label>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: "0 0 4px", fontSize: 12, color: T.inkM }}>Region</p>
+                    <select value={editingUni.region || "uk"} onChange={e => setEditingUni(p => ({...p, region: e.target.value, country: e.target.value === "uk" ? "United Kingdom" : (p.region === "uk" ? "" : p.country)}))}
+                      style={{ padding: "7px 10px", border: `1px solid ${T.border}`, borderRadius: 7, fontSize: 13, outline: "none", fontFamily: "inherit", width: "100%", color: T.ink, background: T.white }}>
+                      <option value="uk">United Kingdom</option>
+                      <option value="international">International</option>
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: "0 0 4px", fontSize: 12, color: T.inkM }}>Country</p>
+                    {inp(editingUni.country || "", v => setEditingUni(p => ({...p, country: v})), "Country")}
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
                   <button onClick={() => {
                     setDraft(d => d.map(u => u.id === editingUni.id ? { ...u, ...editingUni } : u));
                     setEditingUni(null);
@@ -1557,6 +1558,20 @@ function CourseManager({ config, onSave, onClose, counsellors, setCounsellors, e
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <input type="checkbox" checked={newUni.hasTargets} onChange={e => setNewUni(p => ({...p, hasTargets: e.target.checked}))} id="hasTargets" />
                   <label htmlFor="hasTargets" style={{ fontSize: 12, color: T.inkM, cursor: "pointer" }}>Has seat cap targets</label>
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: "0 0 4px", fontSize: 12, color: T.inkM }}>Region</p>
+                    <select value={newUni.region} onChange={e => setNewUni(p => ({...p, region: e.target.value, country: e.target.value === "uk" ? "United Kingdom" : ""}))}
+                      style={{ padding: "7px 10px", border: `1px solid ${T.border}`, borderRadius: 7, fontSize: 13, outline: "none", fontFamily: "inherit", width: "100%", color: T.ink, background: T.white }}>
+                      <option value="uk">United Kingdom</option>
+                      <option value="international">International</option>
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: "0 0 4px", fontSize: 12, color: T.inkM }}>Country</p>
+                    {inp(newUni.country, v => setNewUni(p => ({...p, country: v})), "Country")}
+                  </div>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
                   <button onClick={addUniversity} style={{ padding: "8px 16px", background: T.purple, color: T.white, border: "none", borderRadius: 7, cursor: "pointer", fontWeight: 600, fontSize: 12, fontFamily: "inherit" }}>Add University</button>
@@ -2242,7 +2257,7 @@ export default function App() {
       if (!data) { setLoading(false); return; }
 
       // Load config
-      let cfg = enrichConfig(data.course_config && data.course_config.length ? data.course_config : DEFAULT_CONFIG);
+      let cfg = data.course_config && data.course_config.length ? data.course_config : DEFAULT_CONFIG;
       setConfig(cfg);
       setActiveView("dashboard");
 
@@ -2268,7 +2283,7 @@ export default function App() {
     const ch = supabase.channel("tracker_rt")
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "tracker_data" }, ({ new: row }) => {
         if (editRef.current) return;
-        if (row.course_config?.length) setConfig(enrichConfig(row.course_config));
+        if (row.course_config?.length) setConfig(row.course_config);
         if (row.all_actuals && Object.keys(row.all_actuals).length) setAllActuals(row.all_actuals);
         if (row.logo_data) setLogo(row.logo_data);
         if (row.updated_at) setUpdatedAt(fmtDate(row.updated_at));
