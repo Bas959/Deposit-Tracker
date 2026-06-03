@@ -838,11 +838,8 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
     return { name: uni?.shortName ?? uniId, shortName: uni?.shortName ?? uniId, value, color: uni?.color ?? T.inkL, id: uniId };
   });
 
-  // Bar chart: filter zeros, sort descending; fallback to primary unis if no data
+  // Bar chart: filter zeros, sort descending
   const uniBarData = allUniData.filter(u => u.value > 0).sort((a, b) => b.value - a.value);
-  const uniBarDisplay = uniBarData.length > 0
-    ? uniBarData
-    : config.filter(u => u.hasTargets).map(u => ({ name: u.shortName, value: 0, color: u.color, id: u.id }));
 
   // 2. Top courses — all institutions, per-institution breakdown for tooltip
   const courseMap = {};
@@ -1020,7 +1017,7 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
             <div>
               <p style={chartTitle}>Deposits by University</p>
               <p style={{ ...chartSub, margin: 0 }}>
-                {filterCourse ? `Showing deposits for "${filterCourse}"` : uniBarDisplay.length < allUniData.length ? `Showing ${uniBarDisplay.length} universities with deposits` : "Click a bar to filter the Courses chart"}
+                {filterCourse ? `Showing deposits for "${filterCourse}"` : "Click a bar to filter the Courses chart"}
               </p>
             </div>
             <button onClick={() => toggleWidget("deposits-by-uni")}
@@ -1029,9 +1026,9 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
             </button>
           </div>
           {!collapsedWidgets["deposits-by-uni"] && (() => {
-            const primary = uniBarDisplay.filter(u => PRIMARY_UNI_IDS.includes(u.id));
-            const others  = uniBarDisplay.filter(u => !PRIMARY_UNI_IDS.includes(u.id));
-            const maxVal  = uniBarDisplay[0]?.value || 1;
+            const top3   = uniBarData.slice(0, 3);
+            const rest   = uniBarData.slice(3);
+            const maxVal = uniBarData[0]?.value || 1;
 
             const BarRow = ({ entry }) => (
               <div onClick={() => setFilterUni(prev => prev === entry.id ? null : entry.id)}
@@ -1052,8 +1049,8 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
 
             return (
               <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                {primary.map(u => <BarRow key={u.id} entry={u} />)}
-                {others.length > 0 && (
+                {top3.map(u => <BarRow key={u.id} entry={u} />)}
+                {rest.length > 0 && (
                   <>
                     <div onClick={() => setShowOtherUnis(v => !v)}
                       style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "4px 0", marginTop: 2 }}>
@@ -1063,13 +1060,13 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
                       <div style={{ flex: 1, height: 1, background: T.border }} />
                       <span style={{ fontSize: 11, fontWeight: 600, fontFamily: "ui-monospace, monospace",
                         color: T.inkL, width: 28, flexShrink: 0 }}>
-                        {others.reduce((s, u) => s + u.value, 0)}
+                        {rest.reduce((s, u) => s + u.value, 0)}
                       </span>
                     </div>
-                    {showOtherUnis && others.map(u => <BarRow key={u.id} entry={u} />)}
+                    {showOtherUnis && rest.map(u => <BarRow key={u.id} entry={u} />)}
                   </>
                 )}
-                {uniBarDisplay.length === 0 && (
+                {uniBarData.length === 0 && (
                   <p style={{ fontSize: 12, color: T.inkL, textAlign: "center", padding: "20px 0" }}>No deposits recorded yet</p>
                 )}
               </div>
