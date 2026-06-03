@@ -1935,20 +1935,31 @@ function DataManager({ config, allActuals, setAllActuals, onClose, scheduleSave,
 
   const rows = useMemo(() => {
     const out = [];
-    config.forEach(uni => {
+    const configById = {};
+    config.forEach(u => { configById[u.id] = u; });
+    Object.keys(allActuals).forEach(uniId => {
+      const uniData = allActuals[uniId];
+      const configEntry = configById[uniId];
+      const uniName = configEntry?.name ?? uniId;
+      const campusList = configEntry
+        ? [configEntry.campus1, configEntry.campus2, configEntry.campus3].filter(Boolean)
+        : [];
       ["core", "other"].forEach(section => {
-        const courses = section === "core" ? (uni.coreCourses || []) : (uni.otherCourses || []);
-        courses.forEach(c => {
-          const courseName = typeof c === "string" ? c : c.name;
-          [uni.campus1, uni.campus2, uni.campus3].filter(Boolean).forEach(campus => {
-            const val = allActuals?.[uni.id]?.[section]?.[courseName]?.[campus.key];
+        const sectionData = uniData?.[section];
+        if (!sectionData) return;
+        Object.keys(sectionData).forEach(courseName => {
+          const courseData = sectionData[courseName];
+          if (!courseData) return;
+          Object.keys(courseData).forEach(campusKey => {
+            const val = courseData[campusKey];
             if (!val) return;
+            const campusLabel = campusList.find(c => c.key === campusKey)?.label ?? campusKey;
             if (typeof val === "number") {
-              if (val > 0) out.push({ key: `${uni.id}||${section}||${courseName}||${campus.key}||Unattributed`, uniName: uni.name, uniId: uni.id, section, courseName, campusLabel: campus.label, campusKey: campus.key, counsellor: "Unattributed", count: val });
+              if (val > 0) out.push({ key: `${uniId}||${section}||${courseName}||${campusKey}||Unattributed`, uniName, uniId, section, courseName, campusLabel, campusKey, counsellor: "Unattributed", count: val });
             } else {
               Object.entries(val).forEach(([counsellor, count]) => {
                 if (typeof count === "number" && count > 0)
-                  out.push({ key: `${uni.id}||${section}||${courseName}||${campus.key}||${counsellor}`, uniName: uni.name, uniId: uni.id, section, courseName, campusLabel: campus.label, campusKey: campus.key, counsellor, count });
+                  out.push({ key: `${uniId}||${section}||${courseName}||${campusKey}||${counsellor}`, uniName, uniId, section, courseName, campusLabel, campusKey, counsellor, count });
               });
             }
           });
