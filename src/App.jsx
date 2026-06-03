@@ -425,6 +425,21 @@ function setActual(prev, uniId, section, courseName, campusKey, value) {
   };
 }
 
+// Sums all deposits for one institution directly from allActuals —
+// handles both number (legacy) and { counsellor: count } (current) campus values.
+function sumUniActuals(allActuals, uniId) {
+  let t = 0;
+  ['core', 'other'].forEach(sec => {
+    Object.values(allActuals[uniId]?.[sec] || {}).forEach(courseData => {
+      Object.values(courseData || {}).forEach(campusData => {
+        if (typeof campusData === 'number') { t += campusData; }
+        else if (campusData) { Object.values(campusData).forEach(n => { if (typeof n === 'number') t += n; }); }
+      });
+    });
+  });
+  return t;
+}
+
 // Migrate old column-based actuals to unified all_actuals format
 function migrateActuals(oldData) {
   const result = {};
@@ -802,31 +817,25 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
          + (c3 ? getActual(allActuals, uni.id, section, courseName, c3) : 0);
   }, [allActuals]);
 
-  const getUniTotal = useCallback((uni) => {
-    let t = 0;
-    uni.coreCourses.forEach(c => {
-      const name = typeof c === "string" ? c : c.name;
-      t += getCourseActual(uni, name, "core");
-    });
-    (uni.otherCourses || []).forEach(name => { t += getCourseActual(uni, name, "other"); });
-    return t;
-  }, [getCourseActual]);
+  const getUniTotal = useCallback((uni) => sumUniActuals(allActuals, uni.id), [allActuals]);
 
   // ── Chart data ───────────────────────────────────────────────────────────────
+  const configById = Object.fromEntries(config.map(u => [u.id, u]));
 
   // 1. Deposits by university — filtered by selected course
   // All universities with values (used for grand total and pie)
-  const allUniData = config.map(uni => {
+  const allUniData = Object.keys(allActuals).map(uniId => {
+    const uni = configById[uniId];
     let value;
     if (filterCourse) {
-      const inCore  = uni.coreCourses.some(c => (typeof c === "string" ? c : c.name) === filterCourse);
-      const inOther = (uni.otherCourses || []).includes(filterCourse);
-      value = inCore  ? getCourseActual(uni, filterCourse, "core")
-            : inOther ? getCourseActual(uni, filterCourse, "other") : 0;
+      const inCore  = uni?.coreCourses.some(c => (typeof c === "string" ? c : c.name) === filterCourse) ?? false;
+      const inOther = (uni?.otherCourses || []).includes(filterCourse);
+      value = (inCore && uni)  ? getCourseActual(uni, filterCourse, "core")
+            : (inOther && uni) ? getCourseActual(uni, filterCourse, "other") : 0;
     } else {
-      value = getUniTotal(uni);
+      value = sumUniActuals(allActuals, uniId);
     }
-    return { name: uni.shortName, shortName: uni.shortName, value, color: uni.color, id: uni.id };
+    return { name: uni?.shortName ?? uniId, shortName: uni?.shortName ?? uniId, value, color: uni?.color ?? T.inkL, id: uniId };
   });
 
   // Bar chart: filter zeros, sort descending; fallback to primary unis if no data
@@ -937,35 +946,22 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
     'bsbi', 'gisma', 'aura_labor', 'schiller', 'ue_applied_sciences', 'debrecen', 'mud',
   ]);
 
-  const sumActualsForUni = (uniId) => {
-    let total = 0;
-    const uniData = allActuals[uniId] || {};
-    ['core', 'other'].forEach(sec => {
-      Object.values(uniData[sec] || {}).forEach(courseData => {
-        Object.values(courseData).forEach(campusData => {
-          if (typeof campusData === 'number') { total += campusData; }
-          else { Object.values(campusData).forEach(n => { if (typeof n === 'number') total += n; }); }
-        });
-      });
-    });
-    return total;
-  };
-
   let ukTotal = 0, intlTotal = 0;
   Object.keys(allActuals).forEach(uniId => {
-    const t = sumActualsForUni(uniId);
+    const t = sumUniActuals(allActuals, uniId);
     if (INTERNATIONAL_IDS.has(uniId)) { intlTotal += t; } else { ukTotal += t; }
   });
   const regionTotal = ukTotal + intlTotal;
 
   const countryMap = {};
-  config.forEach(uni => {
-    const country = uni.country || "United Kingdom";
-    const total = getUniTotal(uni);
+  Object.keys(allActuals).forEach(uniId => {
+    const uni = configById[uniId];
+    const country = uni?.country || (INTERNATIONAL_IDS.has(uniId) ? "International" : "United Kingdom");
+    const total = sumUniActuals(allActuals, uniId);
     if (total > 0) {
       if (!countryMap[country]) countryMap[country] = { country, total: 0, byUni: {} };
       countryMap[country].total += total;
-      countryMap[country].byUni[uni.id] = (countryMap[country].byUni[uni.id] || 0) + total;
+      countryMap[country].byUni[uniId] = (countryMap[country].byUni[uniId] || 0) + total;
     }
   });
   const countryData = Object.values(countryMap)
@@ -2386,37 +2382,30 @@ export default function App() {
   };
 
   // ── Computed totals ──────────────────────────────────────────────────────────
-  const uniTotals = config.map(uni => {
-    const c1 = uni.campus1, c2 = uni.campus2, c3 = uni.campus3;
-    // Full actuals — all campuses, core + other (for Overall Deposits card)
-    const fullCore = uni.coreCourses.reduce((s, c) => {
-      const name = typeof c === "string" ? c : c.name;
-      return s + getActual(allActuals, uni.id, "core", name, c1.key)
-               + (c2 ? getActual(allActuals, uni.id, "core", name, c2.key) : 0)
-               + (c3 ? getActual(allActuals, uni.id, "core", name, c3.key) : 0);
-    }, 0);
-    const fullOther = (uni.otherCourses || []).reduce((s, c) => {
-      return s + getActual(allActuals, uni.id, "other", c, c1.key)
-               + (c2 ? getActual(allActuals, uni.id, "other", c, c2.key) : 0)
-               + (c3 ? getActual(allActuals, uni.id, "other", c, c3.key) : 0);
-    }, 0);
-    // Core actuals — only targeted campuses (for Seat Caps progress)
-    const coreActual = uni.coreCourses.reduce((s, c) => {
+  const configById = Object.fromEntries(config.map(u => [u.id, u]));
+  const uniTotals = Object.keys(allActuals).map(uniId => {
+    const uni = configById[uniId];
+    const c1 = uni?.campus1, c2 = uni?.campus2, c3 = uni?.campus3;
+    // total: raw sum from allActuals — no config course list needed
+    const total = sumUniActuals(allActuals, uniId);
+    // coreActual + target remain config-gated: they depend on seat-cap targets in course_config
+    const coreActual = (uni?.hasTargets && c1) ? uni.coreCourses.reduce((s, c) => {
       const name = typeof c === "string" ? c : c.name;
       const lt = ni(c.targets?.[c1.key]);
       const st = c2 ? ni(c.targets?.[c2.key]) : 0;
       const tt = c3 ? ni(c.targets?.[c3.key]) : 0;
-      return s + (uni.hasTargets
-        ? (lt > 0 ? getActual(allActuals, uni.id, "core", name, c1.key) : 0)
-          + (c2 && st > 0 ? getActual(allActuals, uni.id, "core", name, c2.key) : 0)
-          + (c3 && tt > 0 ? getActual(allActuals, uni.id, "core", name, c3.key) : 0)
-        : getActual(allActuals, uni.id, "core", name, c1.key))
-    }, 0);
-    const target = uni.hasTargets ? uni.coreCourses.reduce((s, c) =>
+      return s + (lt > 0 ? getActual(allActuals, uniId, "core", name, c1.key) : 0)
+               + (c2 && st > 0 ? getActual(allActuals, uniId, "core", name, c2.key) : 0)
+               + (c3 && tt > 0 ? getActual(allActuals, uniId, "core", name, c3.key) : 0);
+    }, 0) : 0;
+    const target = (uni?.hasTargets && c1) ? uni.coreCourses.reduce((s, c) =>
       s + ni(c.targets?.[c1.key]) + (c2 ? ni(c.targets?.[c2.key]) : 0) + (c3 ? ni(c.targets?.[c3.key]) : 0), 0) : 0;
     return {
-      id: uni.id, name: uni.name, shortName: uni.shortName, color: uni.color,
-      total: fullCore + fullOther,
+      id: uniId,
+      name: uni?.name ?? uniId,
+      shortName: uni?.shortName ?? uniId,
+      color: uni?.color ?? T.inkL,
+      total,
       coreActual,
       target,
     };
