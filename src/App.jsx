@@ -933,13 +933,29 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
     : pieTop;
 
   // 6. Regional data — UK vs International + country breakdown
-  console.log("Regional Overview key audit:", Object.keys(allActuals).map(k => ({
-    actualsKey: k,
-    configMatch: config.find(u => u.id === k)?.id ?? null,
-  })));
+  const INTERNATIONAL_IDS = new Set([
+    'bsbi', 'gisma', 'aura_labor', 'schiller', 'ue_applied_sciences', 'debrecen', 'mud',
+  ]);
 
-  const ukTotal   = config.filter(u => u.region === "uk" || !u.region).reduce((s, uni) => s + getUniTotal(uni), 0);
-  const intlTotal = config.filter(u => u.region === "international").reduce((s, uni) => s + getUniTotal(uni), 0);
+  const sumActualsForUni = (uniId) => {
+    let total = 0;
+    const uniData = allActuals[uniId] || {};
+    ['core', 'other'].forEach(sec => {
+      Object.values(uniData[sec] || {}).forEach(courseData => {
+        Object.values(courseData).forEach(campusData => {
+          if (typeof campusData === 'number') { total += campusData; }
+          else { Object.values(campusData).forEach(n => { if (typeof n === 'number') total += n; }); }
+        });
+      });
+    });
+    return total;
+  };
+
+  let ukTotal = 0, intlTotal = 0;
+  Object.keys(allActuals).forEach(uniId => {
+    const t = sumActualsForUni(uniId);
+    if (INTERNATIONAL_IDS.has(uniId)) { intlTotal += t; } else { ukTotal += t; }
+  });
   const regionTotal = ukTotal + intlTotal;
 
   const countryMap = {};
