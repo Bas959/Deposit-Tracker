@@ -933,12 +933,25 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
     : pieTop;
 
   // 6. Regional data — UK vs International + country breakdown
-  const ukTotal   = config.filter(u => u.region === "uk" || !u.region).reduce((s, uni) => s + getUniTotal(uni), 0);
-  const intlTotal = config.filter(u => u.region === "international").reduce((s, uni) => s + getUniTotal(uni), 0);
+  // Iterate allActuals keys so renamed/removed config entries are caught, not silently dropped.
+  const configById = {};
+  config.forEach(u => { configById[u.id] = u; });
+  let ukTotal = 0, intlTotal = 0;
+  Object.keys(allActuals).forEach(uniId => {
+    const entry = configById[uniId];
+    if (!entry) {
+      console.warn(`Regional Overview: no config entry for "${uniId}" — deposits unattributed`);
+      return;
+    }
+    const total = getUniTotal(entry);
+    if (entry.region === "international") { intlTotal += total; } else { ukTotal += total; }
+  });
   const regionTotal = ukTotal + intlTotal;
 
   const countryMap = {};
-  config.forEach(uni => {
+  Object.keys(allActuals).forEach(uniId => {
+    const uni = configById[uniId];
+    if (!uni) return;
     const country = uni.country || "United Kingdom";
     const total = getUniTotal(uni);
     if (total > 0) {
@@ -2330,7 +2343,17 @@ export default function App() {
     const current = getActualByCounsellor(allActuals, uniId, section, courseName, campusKey, counsellor);
     const updated = setActualByCounsellor(allActuals, uniId, section, courseName, campusKey, counsellor, current + count);
     setAllActuals(updated);
-    scheduleSave(updated, config);
+    // Stamp region/country onto the config entry if absent so the save payload carries them
+    // independently of future config renames or removals.
+    const uniEntry = config.find(u => u.id === uniId);
+    if (uniEntry && (!uniEntry.region || !uniEntry.country)) {
+      const stamped = config.map(u => u.id !== uniId ? u : {
+        ...u, region: u.region || "uk", country: u.country || "United Kingdom",
+      });
+      setConfig(stamped);
+      refs.current.config = stamped;
+    }
+    scheduleSave();
     setDepositForm({ counsellor: "", uniId: "", section: "core", courseName: "", campusKey: "", count: 1 });
     setShowAddDeposit(false);
   };
