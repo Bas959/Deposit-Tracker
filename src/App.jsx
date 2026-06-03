@@ -933,25 +933,17 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
     : pieTop;
 
   // 6. Regional data — UK vs International + country breakdown
-  // Iterate allActuals keys so renamed/removed config entries are caught, not silently dropped.
-  const configById = {};
-  config.forEach(u => { configById[u.id] = u; });
-  let ukTotal = 0, intlTotal = 0;
-  Object.keys(allActuals).forEach(uniId => {
-    const entry = configById[uniId];
-    if (!entry) {
-      console.warn(`Regional Overview: no config entry for "${uniId}" — deposits unattributed`);
-      return;
-    }
-    const total = getUniTotal(entry);
-    if (entry.region === "international") { intlTotal += total; } else { ukTotal += total; }
-  });
+  console.log("Regional Overview key audit:", Object.keys(allActuals).map(k => ({
+    actualsKey: k,
+    configMatch: config.find(u => u.id === k)?.id ?? null,
+  })));
+
+  const ukTotal   = config.filter(u => u.region === "uk" || !u.region).reduce((s, uni) => s + getUniTotal(uni), 0);
+  const intlTotal = config.filter(u => u.region === "international").reduce((s, uni) => s + getUniTotal(uni), 0);
   const regionTotal = ukTotal + intlTotal;
 
   const countryMap = {};
-  Object.keys(allActuals).forEach(uniId => {
-    const uni = configById[uniId];
-    if (!uni) return;
+  config.forEach(uni => {
     const country = uni.country || "United Kingdom";
     const total = getUniTotal(uni);
     if (total > 0) {
