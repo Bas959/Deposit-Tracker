@@ -2274,7 +2274,7 @@ export default function App() {
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase.from("tracker_data").select("course_config, all_actuals, logo_data, counsellors").eq("id", 1).single();
+      const { data } = await supabase.from("tracker_data").select("course_config, all_actuals, logo_data, counsellors, updated_at").eq("id", 1).single();
       if (!data) { setLoading(false); return; }
 
       // Load config
@@ -2282,22 +2282,22 @@ export default function App() {
       setConfig(cfg);
       setActiveView("dashboard");
 
-      // Load actuals — migrate from old format if needed
-      let acts = data.all_actuals && Object.keys(data.all_actuals).length
-        ? data.all_actuals
-        : migrateActuals(data);
-      const migratedActuals = migrateActualsV2(acts);
-      setAllActuals(migratedActuals);
+      // Load actuals — use Supabase data directly when present so no transformation
+      // can silently drop keys. Only run the V1→V2 migration as a one-time fallback
+      // when all_actuals has never been written to the DB.
+      if (data.all_actuals && Object.keys(data.all_actuals).length) {
+        setAllActuals(data.all_actuals);
+      } else {
+        const acts = migrateActuals(data);
+        const migratedActuals = migrateActualsV2(acts);
+        setAllActuals(migratedActuals);
+        await supabase.from("tracker_data").update({ all_actuals: migratedActuals, course_config: cfg }).eq("id", 1);
+      }
 
       if (data.logo_data) setLogo(data.logo_data);
       if (Array.isArray(data.counsellors)) setCounsellors(data.counsellors);
       if (data.updated_at) setUpdatedAt(fmtDate(data.updated_at));
       setLoading(false);
-
-      // If we just migrated, save the new format
-      if (!(data.all_actuals && Object.keys(data.all_actuals).length)) {
-        await supabase.from("tracker_data").update({ all_actuals: acts, course_config: cfg }).eq("id", 1);
-      }
     };
     load();
 
