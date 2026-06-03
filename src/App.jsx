@@ -1833,19 +1833,20 @@ function CounsellorDashboard({ counsellors, config, allActuals, getActual, getAc
   const leaderboard = counsellors.map(cn => {
     const byUni = {};
     let total = 0;
-    config.forEach(uni => {
-      const c1k = uni.campus1?.key, c2k = uni.campus2?.key, c3k = uni.campus3?.key;
+    Object.keys(allActuals).forEach(uniId => {
       let uniTotal = 0;
       ["core", "other"].forEach(sec => {
-        const courses = sec === "core" ? uni.coreCourses : (uni.otherCourses || []);
-        courses.forEach(c => {
-          const name = typeof c === "string" ? c : c.name;
-          uniTotal += getActualByCounsellor(allActuals, uni.id, sec, name, c1k, cn);
-          if (c2k) uniTotal += getActualByCounsellor(allActuals, uni.id, sec, name, c2k, cn);
-          if (c3k) uniTotal += getActualByCounsellor(allActuals, uni.id, sec, name, c3k, cn);
+        const sectionData = allActuals[uniId]?.[sec] || {};
+        Object.keys(sectionData).forEach(courseName => {
+          const courseData = sectionData[courseName] || {};
+          Object.keys(courseData).forEach(campusKey => {
+            const val = courseData[campusKey];
+            if (!val || typeof val === "number") return;
+            uniTotal += val[cn] || 0;
+          });
         });
       });
-      if (uniTotal > 0) { byUni[uni.id] = uniTotal; total += uniTotal; }
+      if (uniTotal > 0) { byUni[uniId] = uniTotal; total += uniTotal; }
     });
     return { name: cn, total, byUni };
   }).filter(c => c.total > 0).sort((a, b) => b.total - a.total);
