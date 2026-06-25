@@ -808,7 +808,6 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
   const [showOtherUnis, setShowOtherUnis] = useState(false);
   const [courseTooltip, setCourseTooltip] = useState(null);
   const [showCountryBreakdown, setShowCountryBreakdown] = useState(false);
-  const [showCasBreakdown, setShowCasBreakdown] = useState(false);
 
   // ── Data helpers ────────────────────────────────────────────────────────────
   const getCourseActual = useCallback((uni, courseName, section = "core") => {
@@ -1115,39 +1114,6 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
               ))}
             </div>
           </>)}
-        </div>
-      </div>
-
-      {/* CAS Widget */}
-      <div style={{ marginTop: 16 }}>
-        <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 14, padding: "22px 26px", display: "inline-flex", flexDirection: "column", boxShadow: "0 1px 3px rgba(0,0,0,.04)", minWidth: 240 }}>
-          <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: T.inkL, letterSpacing: ".07em", textTransform: "uppercase" }}>CAS Issued</p>
-          <p style={{ margin: "0 0 4px", fontSize: 72, fontWeight: 800, color: T.teal, fontFamily: "ui-monospace, monospace", lineHeight: 1 }}>
-            {Object.values(casActuals || {}).reduce((s, n) => s + (n || 0), 0)}
-          </p>
-          <p style={{ margin: 0, fontSize: 12, color: T.inkL }}>Confirmations of Acceptance for Studies</p>
-          <button onClick={() => setShowCasBreakdown(v => !v)}
-            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: T.inkL, padding: "8px 0 0", fontFamily: "inherit", textAlign: "left" }}>
-            {showCasBreakdown ? "▾" : "▸"} By institution
-          </button>
-          {showCasBreakdown && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 7, marginTop: 4 }}>
-              {config
-                .map(u => ({ id: u.id, name: u.shortName ?? u.name, color: u.color ?? T.inkL, count: (casActuals || {})[u.id] || 0 }))
-                .filter(r => r.count > 0)
-                .sort((a, b) => b.count - a.count)
-                .map(r => (
-                  <div key={r.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: 99, background: r.color }} />
-                      <span style={{ fontSize: 11, color: T.inkM, fontWeight: 500 }}>{r.name}</span>
-                    </div>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: r.color, fontFamily: "ui-monospace, monospace" }}>{r.count}</span>
-                  </div>
-                ))
-              }
-            </div>
-          )}
         </div>
       </div>
 
@@ -2304,6 +2270,7 @@ export default function App() {
 
   const [showUniDropdown, setShowUniDropdown] = useState(false);
   const [showOthersBreakdown, setShowOthersBreakdown] = useState(false);
+  const [showCasBreakdown,   setShowCasBreakdown]   = useState(false);
   const [collapsedWidgets, setCollapsedWidgets] = useState(() => {
     try { return JSON.parse(localStorage.getItem("collapsed_widgets") || "{}"); }
     catch { return {}; }
@@ -2647,6 +2614,36 @@ export default function App() {
             {uniTotals.filter(u => config.find(c => c.id === u.id)?.hasTargets).map(u => (
               <StatCard key={u.id} label={`${u.shortName} · Seat Caps`} value={u.coreActual} max={u.target} accent={u.color} institution={u.shortName} />
             ))}
+            {/* CAS Issued card */}
+            <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 14, padding: "22px 26px", flex: "0 0 240px", boxShadow: "0 1px 3px rgba(0,0,0,.04)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div>
+                <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: T.inkL, letterSpacing: ".07em", textTransform: "uppercase" }}>CAS Issued</p>
+                <p style={{ margin: "0 0 4px", fontSize: 72, fontWeight: 800, color: T.teal, fontFamily: "ui-monospace, monospace", lineHeight: 1 }}>
+                  {Object.values(casActuals).reduce((s, n) => s + (n || 0), 0)}
+                </p>
+                <p style={{ margin: 0, fontSize: 12, color: T.inkL }}>Confirmations of Acceptance for Studies</p>
+              </div>
+              <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 7 }}>
+                <button onClick={() => setShowCasBreakdown(v => !v)}
+                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: T.inkL, padding: "0 0 4px", fontFamily: "inherit", textAlign: "left" }}>
+                  {showCasBreakdown ? "▾" : "▸"} By institution
+                </button>
+                {showCasBreakdown && config
+                  .map(u => ({ id: u.id, name: u.shortName ?? u.name, color: u.color ?? T.inkL, count: casActuals[u.id] || 0 }))
+                  .filter(r => r.count > 0)
+                  .sort((a, b) => b.count - a.count)
+                  .map(r => (
+                    <div key={r.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: 99, background: r.color }} />
+                        <span style={{ fontSize: 11, color: T.inkM, fontWeight: 500 }}>{r.name}</span>
+                      </div>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: r.color, fontFamily: "ui-monospace, monospace" }}>{r.count}</span>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
           </div>
 
           {/* NAVIGATION TABS */}
