@@ -802,12 +802,13 @@ function OtherTable({ uni, allActuals, onUpdate, editable, counsellors, getActua
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────────
-function Dashboard({ config, allActuals, counsellors, getActual, getActualByCounsellor, T, collapsedWidgets, toggleWidget }) {
+function Dashboard({ config, allActuals, counsellors, getActual, getActualByCounsellor, T, collapsedWidgets, toggleWidget, casActuals }) {
   const [filterUni,    setFilterUni]    = useState(null);
   const [filterCourse, setFilterCourse] = useState(null);
   const [showOtherUnis, setShowOtherUnis] = useState(false);
   const [courseTooltip, setCourseTooltip] = useState(null);
   const [showCountryBreakdown, setShowCountryBreakdown] = useState(false);
+  const [casFilter, setCasFilter] = useState("");
 
   // ── Data helpers ────────────────────────────────────────────────────────────
   const getCourseActual = useCallback((uni, courseName, section = "core") => {
@@ -1347,6 +1348,62 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
           </>)}
         </div>
       )}
+
+      {/* CAS Widget */}
+      <div style={{ marginTop: 16 }}>
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start" }}>
+          {/* Total CAS card — styled like Overall Deposits */}
+          <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 14, padding: "22px 26px", flex: "0 0 240px", boxShadow: "0 1px 3px rgba(0,0,0,.04)", display: "flex", flexDirection: "column" }}>
+            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: T.inkL, letterSpacing: ".07em", textTransform: "uppercase" }}>CAS Issued</p>
+            <p style={{ margin: "0 0 4px", fontSize: 72, fontWeight: 800, color: T.teal, fontFamily: "ui-monospace, monospace", lineHeight: 1 }}>
+              {Object.values(casActuals || {}).reduce((s, n) => s + (n || 0), 0)}
+            </p>
+            <p style={{ margin: 0, fontSize: 12, color: T.inkL }}>Confirmations of Acceptance for Studies</p>
+          </div>
+
+          {/* CAS breakdown card */}
+          <div style={{ ...chartCard, flex: 1, minWidth: 280 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: collapsedWidgets["cas-breakdown"] ? 0 : 12 }}>
+              <div>
+                <p style={chartTitle}>CAS by Institution</p>
+                <p style={{ ...chartSub, margin: 0 }}>CAS issued per university</p>
+              </div>
+              <button onClick={() => toggleWidget("cas-breakdown")}
+                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: T.inkL, padding: "0 0 0 8px", flexShrink: 0, lineHeight: 1 }}>
+                {collapsedWidgets["cas-breakdown"] ? "▸" : "▾"}
+              </button>
+            </div>
+            {!collapsedWidgets["cas-breakdown"] && (() => {
+              const rows = config
+                .map(u => ({ id: u.id, name: u.shortName ?? u.name, color: u.color ?? T.inkL, count: (casActuals || {})[u.id] || 0 }))
+                .filter(r => casFilter ? r.name.toLowerCase().includes(casFilter.toLowerCase()) : r.count > 0)
+                .sort((a, b) => b.count - a.count);
+              return (
+                <div>
+                  <input
+                    placeholder="Filter institutions…"
+                    value={casFilter}
+                    onChange={e => setCasFilter(e.target.value)}
+                    style={{ width: "100%", padding: "7px 10px", border: `1px solid ${T.border}`, borderRadius: 7, fontSize: 12, fontFamily: "inherit", color: T.ink, marginBottom: 12, boxSizing: "border-box", outline: "none" }}
+                  />
+                  <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                    {rows.map(r => (
+                      <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: 99, background: r.color, flexShrink: 0 }} />
+                        <span style={{ fontSize: 12, color: T.inkM, flex: 1 }}>{r.name}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: r.color, fontFamily: "ui-monospace, monospace" }}>{r.count}</span>
+                      </div>
+                    ))}
+                    {rows.length === 0 && (
+                      <p style={{ fontSize: 12, color: T.inkL, textAlign: "center", padding: "12px 0" }}>No CAS data recorded yet</p>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      </div>
 
       <p style={{ margin: "16px 0 0", fontSize: 11, color: T.inkL, textAlign: "center" }}>
         Click any bar to cross-filter · Click again to clear · Use chips above to clear filters
@@ -2060,8 +2117,55 @@ function DataManager({ config, allActuals, setAllActuals, onClose, scheduleSave,
   );
 }
 
+// ── CAS MANAGER ───────────────────────────────────────────────────────────────
+function CasManager({ config, casActuals, setCasActuals, scheduleSave }) {
+  const [draft, setDraft] = useState(() => ({ ...(casActuals || {}) }));
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = () => {
+    setCasActuals(draft);
+    scheduleSave();
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  return (
+    <div style={{ padding: "32px", display: "flex", flexDirection: "column", gap: 24, overflowY: "auto" }}>
+      <div style={{ background: T.bg, borderRadius: 12, padding: "24px 28px", border: `1px solid ${T.border}` }}>
+        <p style={{ fontSize: 15, fontWeight: 700, color: T.ink, margin: "0 0 6px" }}>CAS Actuals</p>
+        <p style={{ fontSize: 13, color: T.inkM, margin: "0 0 20px" }}>Enter the number of CAS letters issued per institution. Changes are saved alongside all other data.</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {config.map(uni => (
+            <div key={uni.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", background: T.white, borderRadius: 8, border: `1px solid ${T.border}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 10, height: 10, borderRadius: 99, background: uni.color || T.inkL, flexShrink: 0 }} />
+                <span style={{ fontSize: 13, fontWeight: 500, color: T.ink }}>{uni.name}</span>
+              </div>
+              <input
+                type="number"
+                min="0"
+                value={draft[uni.id] ?? 0}
+                onChange={e => setDraft(prev => ({ ...prev, [uni.id]: Math.max(0, parseInt(e.target.value) || 0) }))}
+                style={{ width: 90, padding: "6px 10px", border: `1px solid ${T.border}`, borderRadius: 6, fontSize: 13, fontFamily: "ui-monospace, monospace", textAlign: "right", color: T.ink, outline: "none" }}
+              />
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: 20, display: "flex", alignItems: "center", gap: 12 }}>
+          <button
+            onClick={handleSave}
+            style={{ padding: "10px 22px", background: T.purple, color: T.white, border: "none", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 700, fontFamily: "inherit" }}>
+            Save CAS counts
+          </button>
+          {saved && <span style={{ fontSize: 12, color: T.green, fontWeight: 600 }}>Saved!</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── ADMIN PANEL ───────────────────────────────────────────────────────────────
-function AdminPanel({ tab, setTab, config, setConfig, counsellors, setCounsellors, allActuals, setAllActuals, scheduleSave, onClose }) {
+function AdminPanel({ tab, setTab, config, setConfig, counsellors, setCounsellors, allActuals, setAllActuals, scheduleSave, onClose, casActuals, setCasActuals }) {
   const fileRef = useRef(null);
   const [importPreview, setImportPreview] = useState(null);
   const [importData, setImportData] = useState(null);
@@ -2124,6 +2228,7 @@ function AdminPanel({ tab, setTab, config, setConfig, counsellors, setCounsellor
         <div style={{ display: "flex", borderBottom: `1px solid ${T.border}`, flexShrink: 0, background: T.bg }}>
           {tabBtn("config", "🎓 Configuration")}
           {tabBtn("data", "📋 Data")}
+          {tabBtn("cas", "📄 CAS")}
           {tabBtn("backup", "💾 Backup")}
         </div>
 
@@ -2147,6 +2252,10 @@ function AdminPanel({ tab, setTab, config, setConfig, counsellors, setCounsellor
               onClose={onClose} scheduleSave={scheduleSave}
               embedded={true}
             />
+          )}
+
+          {tab === "cas" && (
+            <CasManager config={config} casActuals={casActuals} setCasActuals={setCasActuals} scheduleSave={scheduleSave} />
           )}
 
           {tab === "backup" && (
@@ -2201,6 +2310,7 @@ export default function App() {
   const [session,     setSession]     = useState(null);
   const [config,      setConfig]      = useState([]);
   const [allActuals,  setAllActuals]  = useState({});
+  const [casActuals,   setCasActuals]   = useState({});
   const [activeView,   setActiveView]   = useState("dashboard"); // "dashboard" | uniId
   const [subTab,      setSubTab]      = useState("core");
   const [editable,    setEditable]    = useState(false);
@@ -2236,7 +2346,7 @@ export default function App() {
   }, []);
 
   const refs    = useRef({});
-  refs.current  = { allActuals, config, logo };
+  refs.current  = { allActuals, config, logo, casActuals };
   const timer   = useRef(null);
   const editRef = useRef(editable);
   const dropdownRef = useRef(null);
@@ -2279,7 +2389,7 @@ export default function App() {
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase.from("tracker_data").select("course_config, all_actuals, logo_data, counsellors, updated_at").eq("id", 1).single();
+      const { data } = await supabase.from("tracker_data").select("course_config, all_actuals, logo_data, counsellors, updated_at, cas_actuals").eq("id", 1).single();
       if (!data) { setLoading(false); return; }
 
       // Load config
@@ -2302,6 +2412,7 @@ export default function App() {
       if (data.logo_data) setLogo(data.logo_data);
       if (Array.isArray(data.counsellors)) setCounsellors(data.counsellors);
       if (data.updated_at) setUpdatedAt(fmtDate(data.updated_at));
+      if (data.cas_actuals) setCasActuals(data.cas_actuals);
       setLoading(false);
     };
     load();
@@ -2313,6 +2424,7 @@ export default function App() {
         if (row.all_actuals && Object.keys(row.all_actuals).length) setAllActuals(row.all_actuals);
         if (row.logo_data) setLogo(row.logo_data);
         if (row.updated_at) setUpdatedAt(fmtDate(row.updated_at));
+        if (row.cas_actuals) setCasActuals(row.cas_actuals);
       }).subscribe();
     return () => supabase.removeChannel(ch);
   }, []);
@@ -2332,6 +2444,7 @@ export default function App() {
           allActuals: r.allActuals,
           config: r.config,
           counsellors,
+          casActuals: r.casActuals,
         }),
       });
       setSaving(false);
@@ -2596,7 +2709,7 @@ export default function App() {
           {/* DASHBOARD VIEW */}
           {activeView === "dashboard" && (
             <div style={{ background: T.white, borderRadius: "0 12px 12px 12px", border: `1px solid ${T.border}`, borderTop: "none", boxShadow: "0 2px 8px rgba(0,0,0,.04)" }}>
-              <Dashboard config={config} allActuals={allActuals} counsellors={counsellors} getActual={getActual} getActualByCounsellor={getActualByCounsellor} T={T} collapsedWidgets={collapsedWidgets} toggleWidget={toggleWidget} />
+              <Dashboard config={config} allActuals={allActuals} counsellors={counsellors} getActual={getActual} getActualByCounsellor={getActualByCounsellor} T={T} collapsedWidgets={collapsedWidgets} toggleWidget={toggleWidget} casActuals={casActuals} />
             </div>
           )}
 
@@ -2747,6 +2860,7 @@ export default function App() {
             counsellors={counsellors} setCounsellors={setCounsellors}
             allActuals={allActuals} setAllActuals={setAllActuals}
             scheduleSave={scheduleSave}
+            casActuals={casActuals} setCasActuals={setCasActuals}
             onClose={() => setShowAdmin(false)}
           />
         )}
