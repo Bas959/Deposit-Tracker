@@ -808,7 +808,7 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
   const [showOtherUnis, setShowOtherUnis] = useState(false);
   const [courseTooltip, setCourseTooltip] = useState(null);
   const [showCountryBreakdown, setShowCountryBreakdown] = useState(false);
-  const [casFilter, setCasFilter] = useState("");
+  const [showCasBreakdown, setShowCasBreakdown] = useState(false);
 
   // ── Data helpers ────────────────────────────────────────────────────────────
   const getCourseActual = useCallback((uni, courseName, section = "core") => {
@@ -1118,6 +1118,39 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
         </div>
       </div>
 
+      {/* CAS Widget */}
+      <div style={{ marginTop: 16 }}>
+        <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 14, padding: "22px 26px", display: "inline-flex", flexDirection: "column", boxShadow: "0 1px 3px rgba(0,0,0,.04)", minWidth: 240 }}>
+          <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: T.inkL, letterSpacing: ".07em", textTransform: "uppercase" }}>CAS Issued</p>
+          <p style={{ margin: "0 0 4px", fontSize: 72, fontWeight: 800, color: T.teal, fontFamily: "ui-monospace, monospace", lineHeight: 1 }}>
+            {Object.values(casActuals || {}).reduce((s, n) => s + (n || 0), 0)}
+          </p>
+          <p style={{ margin: 0, fontSize: 12, color: T.inkL }}>Confirmations of Acceptance for Studies</p>
+          <button onClick={() => setShowCasBreakdown(v => !v)}
+            style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, color: T.inkL, padding: "8px 0 0", fontFamily: "inherit", textAlign: "left" }}>
+            {showCasBreakdown ? "▾" : "▸"} By institution
+          </button>
+          {showCasBreakdown && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 7, marginTop: 4 }}>
+              {config
+                .map(u => ({ id: u.id, name: u.shortName ?? u.name, color: u.color ?? T.inkL, count: (casActuals || {})[u.id] || 0 }))
+                .filter(r => r.count > 0)
+                .sort((a, b) => b.count - a.count)
+                .map(r => (
+                  <div key={r.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: 99, background: r.color }} />
+                      <span style={{ fontSize: 11, color: T.inkM, fontWeight: 500 }}>{r.name}</span>
+                    </div>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: r.color, fontFamily: "ui-monospace, monospace" }}>{r.count}</span>
+                  </div>
+                ))
+              }
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Row 2: Counsellor Performance */}
       <div style={{ marginTop: 16 }}>
         <CounsellorDashboard
@@ -1348,62 +1381,6 @@ function Dashboard({ config, allActuals, counsellors, getActual, getActualByCoun
           </>)}
         </div>
       )}
-
-      {/* CAS Widget */}
-      <div style={{ marginTop: 16 }}>
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start" }}>
-          {/* Total CAS card — styled like Overall Deposits */}
-          <div style={{ background: T.white, border: `1px solid ${T.border}`, borderRadius: 14, padding: "22px 26px", flex: "0 0 240px", boxShadow: "0 1px 3px rgba(0,0,0,.04)", display: "flex", flexDirection: "column" }}>
-            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: T.inkL, letterSpacing: ".07em", textTransform: "uppercase" }}>CAS Issued</p>
-            <p style={{ margin: "0 0 4px", fontSize: 72, fontWeight: 800, color: T.teal, fontFamily: "ui-monospace, monospace", lineHeight: 1 }}>
-              {Object.values(casActuals || {}).reduce((s, n) => s + (n || 0), 0)}
-            </p>
-            <p style={{ margin: 0, fontSize: 12, color: T.inkL }}>Confirmations of Acceptance for Studies</p>
-          </div>
-
-          {/* CAS breakdown card */}
-          <div style={{ ...chartCard, flex: 1, minWidth: 280 }}>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: collapsedWidgets["cas-breakdown"] ? 0 : 12 }}>
-              <div>
-                <p style={chartTitle}>CAS by Institution</p>
-                <p style={{ ...chartSub, margin: 0 }}>CAS issued per university</p>
-              </div>
-              <button onClick={() => toggleWidget("cas-breakdown")}
-                style={{ background: "none", border: "none", cursor: "pointer", fontSize: 14, color: T.inkL, padding: "0 0 0 8px", flexShrink: 0, lineHeight: 1 }}>
-                {collapsedWidgets["cas-breakdown"] ? "▸" : "▾"}
-              </button>
-            </div>
-            {!collapsedWidgets["cas-breakdown"] && (() => {
-              const rows = config
-                .map(u => ({ id: u.id, name: u.shortName ?? u.name, color: u.color ?? T.inkL, count: (casActuals || {})[u.id] || 0 }))
-                .filter(r => casFilter ? r.name.toLowerCase().includes(casFilter.toLowerCase()) : r.count > 0)
-                .sort((a, b) => b.count - a.count);
-              return (
-                <div>
-                  <input
-                    placeholder="Filter institutions…"
-                    value={casFilter}
-                    onChange={e => setCasFilter(e.target.value)}
-                    style={{ width: "100%", padding: "7px 10px", border: `1px solid ${T.border}`, borderRadius: 7, fontSize: 12, fontFamily: "inherit", color: T.ink, marginBottom: 12, boxSizing: "border-box", outline: "none" }}
-                  />
-                  <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                    {rows.map(r => (
-                      <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: 99, background: r.color, flexShrink: 0 }} />
-                        <span style={{ fontSize: 12, color: T.inkM, flex: 1 }}>{r.name}</span>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: r.color, fontFamily: "ui-monospace, monospace" }}>{r.count}</span>
-                      </div>
-                    ))}
-                    {rows.length === 0 && (
-                      <p style={{ fontSize: 12, color: T.inkL, textAlign: "center", padding: "12px 0" }}>No CAS data recorded yet</p>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        </div>
-      </div>
 
       <p style={{ margin: "16px 0 0", fontSize: 11, color: T.inkL, textAlign: "center" }}>
         Click any bar to cross-filter · Click again to clear · Use chips above to clear filters
