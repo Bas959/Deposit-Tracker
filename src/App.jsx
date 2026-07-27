@@ -2333,7 +2333,7 @@ export default function App() {
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase.from("tracker_data").select("course_config, all_actuals, logo_data, counsellors, updated_at, cas_actuals").eq("id", 1).single();
+      const { data } = await supabase.from("tracker_data").select("course_config, all_actuals, logo_data, counsellors, updated_at, last_updated, cas_actuals").eq("id", 1).single();
       if (!data) { setLoading(false); return; }
 
       // Load config
@@ -2355,7 +2355,8 @@ export default function App() {
 
       if (data.logo_data) setLogo(data.logo_data);
       if (Array.isArray(data.counsellors)) setCounsellors(data.counsellors);
-      if (data.updated_at) setUpdatedAt(fmtDate(data.updated_at));
+      if (data.last_updated) setUpdatedAt(fmtDate(data.last_updated));
+      else if (data.updated_at) setUpdatedAt(fmtDate(data.updated_at));
       if (data.cas_actuals) setCasActuals(data.cas_actuals);
       setLoading(false);
     };
@@ -2367,7 +2368,8 @@ export default function App() {
         if (row.course_config?.length) setConfig(row.course_config);
         if (row.all_actuals && Object.keys(row.all_actuals).length) setAllActuals(row.all_actuals);
         if (row.logo_data) setLogo(row.logo_data);
-        if (row.updated_at) setUpdatedAt(fmtDate(row.updated_at));
+        if (row.last_updated) setUpdatedAt(fmtDate(row.last_updated));
+        else if (row.updated_at) setUpdatedAt(fmtDate(row.updated_at));
         if (row.cas_actuals) setCasActuals(row.cas_actuals);
       }).subscribe();
     return () => supabase.removeChannel(ch);
@@ -2389,6 +2391,7 @@ export default function App() {
           config: r.config,
           counsellors,
           casActuals: r.casActuals,
+          lastUpdated: now,
         }),
       });
       setSaving(false);
@@ -2404,7 +2407,7 @@ export default function App() {
   const handleSaveConfig = useCallback(async (newConfig) => {
     setConfig(newConfig);
     refs.current.config = newConfig;
-    await supabase.from("tracker_data").update({ course_config: newConfig, updated_at: new Date().toISOString() }).eq("id", 1);
+    await supabase.from("tracker_data").update({ course_config: newConfig, updated_at: new Date().toISOString(), last_updated: new Date().toISOString() }).eq("id", 1);
   }, []);
 
   const handleAddDeposit = () => {
